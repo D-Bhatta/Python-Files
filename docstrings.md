@@ -53,6 +53,7 @@ resuming unindented text.
 
 """
 
+
 module_level_variable1 = 12345
 
 module_level_variable2 = 98765
@@ -87,14 +88,12 @@ class ExampleClass:
         This is an example of an indented notes section. It's like any other section,
         but the body is indented to help it stand out from surrounding text. Highlight
         contextually important information here.
-
-
     """
 
     def __init__(self, param1, param2, param3):
         """Example of docstring on the __init__ method.
 
-        The __init__ method may be documented in a docstring on the 
+        The __init__ method may be documented in a docstring on the
         __init__ method itself.
 
         Do not include the `self` parameter in the ``Args`` section.
@@ -124,14 +123,14 @@ class ExampleClass:
 
         """
         if param1 == param2:
-            raise ValueError('param1 may not be equal to param2')
+            raise ValueError("param1 may not be equal to param2")
 
         self.attr1 = param1
         self.attr2 = param2
         self.attr3 = param3  #: Doc comment *inline* with attribute
 
         #: list(str): Doc comment *before* attribute, with type specified
-        self.attr4 = ['attr4']
+        self.attr4 = ["attr4"]
 
         self.attr5 = None
         """str: Docstring *after* attribute, with type specified."""
@@ -139,7 +138,7 @@ class ExampleClass:
     @property
     def readonly_property(self):
         """str: Properties should be documented in their getter method."""
-        return 'readonly_property'
+        return "readonly_property"
 
     @property
     def readwrite_property(self):
@@ -149,7 +148,7 @@ class ExampleClass:
         If the setter method contains notable behavior, it should be
         mentioned here.
         """
-        return ['readwrite_property']
+        return ["readwrite_property"]
 
     @readwrite_property.setter
     def readwrite_property(self, value):
@@ -182,7 +181,6 @@ class ExampleClass:
 
         Raises:
             IOError: An error occurred doing this.
-
         """
         return True
 
@@ -198,7 +196,6 @@ class ExampleClass:
         Sphinx's conf.py::
 
             napoleon_include_special_with_doc = True
-
         """
         pass
 
@@ -216,7 +213,6 @@ class ExampleClass:
         by changing the following setting in Sphinx's conf.py::
 
             napoleon_include_private_with_doc = True
-
         """
         pass
 
@@ -230,19 +226,18 @@ class ExampleClass:
 class ExampleError(Exception):
     """Exceptions are documented in the same way as classes.
 
-    The __init__ method may be documented in a docstring on 
+    The __init__ method may be documented in a docstring on
     the __init__ method itself.
 
     Attributes:
         msg (str): Human readable string describing the exception.
         code (int): Exception error code.
-
     """
 
     def __init__(self, msg, code):
         """Example of docstring on the __init__ method.
 
-        The __init__ method may be documented in a docstring on the 
+        The __init__ method may be documented in a docstring on the
         __init__ method itself.
 
         Do not include the `self` parameter in the ``Args`` section.
@@ -272,11 +267,12 @@ class ExampleError(Exception):
             [ExampleError("APOD", 1)]
         """
         if not msg:
-            raise ValueError('The message should not be empty. Please add a helpful error message.')        
+            raise ValueError(
+                "The message should not be empty. Please add a helpful error message."
+            )
 
         self.msg = msg
         self.code = code
-
 ```
 
 ## Function level
@@ -353,10 +349,9 @@ def module_level_function(param1: int, param2: str, param3=None, *args, **kwargs
         [ExampleError("APOD", 1)]
         >>> module_level_function(param1=1, param2="hello", param3=None)
         result prints here
-
     """
     if param1 == param2:
-        raise ValueError('param1 may not be equal to param2')
+        raise ValueError("param1 may not be equal to param2")
     return True
 ```
 
@@ -365,27 +360,26 @@ def module_level_function(param1: int, param2: str, param3=None, *args, **kwargs
 ```python
 """Generators have a ``Yields`` section instead of a ``Returns`` section.
 
-    Args:
-        n (int): The upper limit of the range to generate, from 0 to `n` - 1.
+Args:
+    n (int): The upper limit of the range to generate, from 0 to `n` - 1.
 
-    Yields:
-        int: The next number in the range of 0 to `n` - 1.
+Yields:
+    int: The next number in the range of 0 to `n` - 1.
 
-    Raises:
-        AttributeError: The ``Raises`` section is a list of all exceptions
-            that are relevant to the interface.
-        ValueError: If `param2` is equal to `param1`.
+Raises:
+    AttributeError: The ``Raises`` section is a list of all exceptions
+        that are relevant to the interface.
+    ValueError: If `param2` is equal to `param1`.
 
-    Examples:
-        Examples should be written in doctest format, and should illustrate how
-        to use the function.
+Examples:
+    Examples should be written in doctest format, and should illustrate how
+    to use the function.
 
-        >>> print([i for i in example_generator(4)])
-        [0, 1, 2, 3]
-
-    """
-    for i in range(n):
-        yield i
+    >>> print([i for i in example_generator(4)])
+    [0, 1, 2, 3]
+"""
+for i in range(n):
+    yield i
 ```
 
 ## Additional Information
