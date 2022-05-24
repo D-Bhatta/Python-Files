@@ -1,0 +1,44 @@
+[flake8]
+# To follow black's recommeded line length
+max-line-length = 88
+# McCabe complexity
+max-complexity = 10
+# Turn color on in outputs
+color = always
+# Enable doctests
+doctests = True
+extend-exclude =
+    # Use `` to exclude files and folders and patterns
+    # Do not run on tests
+    tests/,
+    # Do not run on dirs that start with a dot, like .venv
+    .*/,
+    # Do not run on folders that are caches
+    *_cache/
+
+require-plugins =
+    # This doesn't seem to be working right now
+    # Kept here for documentation purposes
+    # Currently installing plugins via requirements
+    dlint,
+    flake8-bugbear,
+    flake8-comprehensions,
+    flake8-simplify
+extend-ignore =
+    # Use `extend-ignore to ignore all unnecessary rules instead of ignore
+    # Unnecessarily requires blank lines between class name and class docstring.
+    D203,
+    # For black documentation # TODO: Add more context
+    E203,
+    # Supressed for duplicating flake8-bugbear warning B950: https://github.com/PyCQA/flake8-bugbear#:~:text=tutorial%20for%20details.-,B950,-%3A%20Line%20too%20long
+    E501,
+    # Supressed for duplicating flake8-bugbear warning B001: https://github.com/PyCQA/flake8-bugbear#:~:text=List%20of%20warnings-,B001,-%3A%20Do%20not%20use
+    E722
+    # Supressed for lowering performance
+    SIM105
+extend-select =
+    # Use `extend-select` to enable disabled rules instead of `select`.
+    # Enable all of bugbear's opinionated warnings: https://github.com/PyCQA/flake8-bugbear#opinionated-warnings
+    B9,
+    # Enable all of dlint: https://github.com/PyCQA/flake8-bugbear#opinionated-warnings
+    DUO
