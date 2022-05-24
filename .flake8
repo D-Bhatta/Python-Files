@@ -23,6 +23,7 @@ require-plugins =
     dlint,
     flake8-bugbear,
     flake8-comprehensions,
+    flake8-secure-coding-standard,
     flake8-simplify
 extend-ignore =
     # Use `extend-ignore to ignore all unnecessary rules instead of ignore
