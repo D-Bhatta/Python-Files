@@ -1,0 +1,5 @@
+[bandit]
+targets =  app/
+recursive = true
+quiet = true
+exlcude = tests/
