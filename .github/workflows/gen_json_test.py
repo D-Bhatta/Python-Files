@@ -12,11 +12,9 @@ metrics = {}
 metrics["name"] = "Test with pytest"
 
 try:
-    metrics["venv-cache.outputs.cache-hit"] = os.environ[
-        "STEPS_VENV_CACHE_OUTPUTS_CACHE_HIT"
-    ]
+    metrics["test_cache_hit"] = os.environ["test_cache_hit"]
 except KeyError:
-    metrics["venv-cache.outputs.cache-hit"] = None
+    metrics["test_cache_hit"] = None
 
 try:
     metrics["start_test_create_environment"] = os.environ[

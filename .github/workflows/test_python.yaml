@@ -76,6 +76,7 @@ jobs:
       - name: Output env info
         id: check-formatting-save-env-info
         run: |
+          echo "check_fmt_cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
           python --version
           pip --version
@@ -146,6 +147,7 @@ jobs:
       - name: Output env info
         id: check-formatting-save-env-info
         run: |
+          echo "test_cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
           python --version
           pip --version

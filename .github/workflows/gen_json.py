@@ -12,11 +12,9 @@ metrics = {}
 metrics["name"] = "Check code formatting with black"
 
 try:
-    metrics["venv-cache.outputs.cache-hit"] = os.environ[
-        "STEPS_VENV_CACHE_OUTPUTS_CACHE_HIT"
-    ]
+    metrics["check_fmt_cache_hit"] = os.environ["check_fmt_cache_hit"]
 except KeyError:
-    metrics["venv-cache.outputs.cache-hit"] = None
+    metrics["check_fmt_cache_hit"] = None
 
 try:
     metrics["start_check_formatting_create_environment"] = os.environ[
