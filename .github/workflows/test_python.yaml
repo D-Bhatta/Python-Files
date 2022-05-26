@@ -4,7 +4,9 @@
 # * TODO: Instrument up check-formatting
 # * TODO: Use python to write json to STDOUT, and append that to GITHUB_ENV
 # * TODO: Instrument up test
-# TODO: Run it
+# * TODO: Run it
+# ! TODO: Fix null values in job summaries for test
+# ! TODO: Fix null values in job summaries for check-formatting
 # TODO: Remove redundant stuff from check-formatting
 # TODO: Remove redundant stuff from test
 # TODO: Add more stuff to test like flake8
@@ -85,7 +87,7 @@ jobs:
           echo "# Check code formatting with black" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-          python .github/workflows/gen_json.py >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_test.py >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
   test:
@@ -140,7 +142,7 @@ jobs:
           pip --version;
           python -m pip freeze;
           pytest;
-          echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "stop_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
         id: check-formatting-save-env-info
         run: |

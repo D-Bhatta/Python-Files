@@ -49,4 +49,7 @@ try:
 except KeyError:
     metrics["stop_check_formatting_run_black"] = None
 
+with open("gen_json.json", "w", encoding="utf-8") as fio:
+    json.dump(metrics, fp=fio, ensure_ascii=False, indent=4)
+
 print(json.dumps(metrics, ensure_ascii=False, indent=4))
