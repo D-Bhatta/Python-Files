@@ -59,13 +59,13 @@ jobs:
           pip --version;
           python -m pip install --upgrade pip;
           python -m pip install --upgrade wheel;
-          pip install black
+          python -m pip install black
           echo "stop_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Check code formatting with black
         id: check-formatting-run-black
         run: |
           echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
-          black --check .
+          python -m black --check .
           echo "stop_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
         id: check-formatting-save-env-info
