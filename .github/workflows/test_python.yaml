@@ -154,7 +154,7 @@ jobs:
       - name: Generate markdown report
         id: gen-md-report
         run: |
-          echo "# Check code formatting with black" >> $GITHUB_STEP_SUMMARY
+          echo "# Test with pytest" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           python .github/workflows/gen_json_test.py >> $GITHUB_STEP_SUMMARY

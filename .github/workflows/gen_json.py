@@ -9,6 +9,8 @@ import os
 
 metrics = {}
 
+metrics["name"] = "Check code formatting with black"
+
 try:
     metrics["venv-cache.outputs.cache-hit"] = os.environ[
         "STEPS_VENV_CACHE_OUTPUTS_CACHE_HIT"
