@@ -1,0 +1,156 @@
+# Action for testing Python code using pytest on a matrix
+# * TODO: Cache up check-formatting
+# * TODO: Add a matrix to check-formatting
+# * TODO: Instrument up check-formatting
+# * TODO: Use python to write json to STDOUT, and append that to GITHUB_ENV
+# * TODO: Instrument up test
+# TODO: Run it
+# TODO: Remove redundant stuff from check-formatting
+# TODO: Remove redundant stuff from test
+# TODO: Add more stuff to test like flake8
+
+---
+name: Test Python
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  check-formatting:
+    name: Check code formatting with black
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.10]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python environment cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env-formatting
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
+      - name: Create environment
+        # Create a python environment if cache is not present
+        id: check-formatting-create-environment
+        if: ${{ steps.venv-cache.outputs.cache-hit == false }}
+        run: |
+          echo "start_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          python -m venv .venv;
+          source .venv/bin/activate;
+          python --version;
+          pip --version;
+          python -m pip install --upgrade pip;
+          python -m pip install --upgrade wheel;
+          pip install black
+          echo "stop_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Check code formatting with black
+        id: check-formatting-run-black
+        run: |
+          echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          black --check .
+          echo "stop_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
+          python --version
+          pip --version
+          pip freeze
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Check code formatting with black" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python3.10 .github/workflows/gen_json.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  test:
+    name: Test with pytest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7, 3.8, 3.9, 3.10]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python environment cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - name: Create environment
+        id: create-environment
+        if: ${{ steps.venv-cache.outputs.cache-hit == false }}
+        run: |
+          echo "start_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          python -m venv .venv;
+          source .venv/bin/activate;
+          python --version;
+          pip --version;
+          python -m pip install --upgrade pip;
+          python -m pip install --upgrade wheel;
+          python -m pip install -r requirements.txt;
+          python -m pip install -r requirements-dev.txt;
+          python -m pip freeze;
+          echo "stop_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Test with pytest
+        id: test-pytest
+        run: |
+          echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          source .venv/bin/activate;
+          python --version;
+          pip --version;
+          python -m pip freeze;
+          pytest;
+          echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
+          python --version
+          pip --version
+          pip freeze
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Check code formatting with black" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python3.10 .github/workflows/gen_json.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
