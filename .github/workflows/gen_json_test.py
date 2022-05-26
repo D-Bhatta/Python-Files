@@ -13,6 +13,12 @@ metrics["name"] = "Test with pytest"
 
 try:
     metrics["test_cache_hit"] = os.environ["test_cache_hit"]
+    if metrics["test_cache_hit"] == "true":
+        metrics["test_cache_hit"] = True
+    elif metrics["test_cache_hit"] == "false":
+        metrics["test_cache_hit"] = False
+    else:
+        raise ValueError("Unknown value for key 'test_cache_hit' in metrics.")
 except KeyError:
     metrics["test_cache_hit"] = None
 

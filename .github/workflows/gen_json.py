@@ -13,6 +13,12 @@ metrics["name"] = "Check code formatting with black"
 
 try:
     metrics["check_fmt_cache_hit"] = os.environ["check_fmt_cache_hit"]
+    if metrics["check_fmt_cache_hit"] == "true":
+        metrics["check_fmt_cache_hit"] = True
+    elif metrics["check_fmt_cache_hit"] == "false":
+        metrics["check_fmt_cache_hit"] = False
+    else:
+        raise ValueError("Unknown value for key 'check_fmt_cache_hit' in metrics.")
 except KeyError:
     metrics["check_fmt_cache_hit"] = None
 
