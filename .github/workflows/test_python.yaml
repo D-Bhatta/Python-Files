@@ -65,6 +65,10 @@ jobs:
         id: check-formatting-run-black
         run: |
           echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          source .venv/bin/activate;
+          python --version;
+          pip --version;
+          python -m pip freeze;
           python -m black --check .
           echo "stop_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
