@@ -1,19 +1,22 @@
 # Action for testing Python code using pytest on a matrix
+# yamllint disable rule:line-length
 # * TODO: Cache up check-formatting
 # * TODO: Add a matrix to check-formatting
 # * TODO: Instrument up check-formatting
 # * TODO: Use python to write json to STDOUT, and append that to GITHUB_ENV
 # * TODO: Instrument up test
 # * TODO: Run it
-# ! TODO: Fix null values in job summaries for test
-# ! TODO: Fix null values in job summaries for check-formatting
-# TODO: Remove redundant stuff from check-formatting
-# TODO: Remove redundant stuff from test
-# TODO: Add more stuff to test like flake8
+# * ! TODO: Fix unnecessary null values in job summaries for test
+# * ! TODO: Fix unnecessary Fix null values in job summaries for check-formatting
+# * TODO: Remove redundant stuff from check-formatting
+# * TODO: Remove redundant stuff from test
+# * TODO: Add more static tools to test like flake8
+# TODO: Properly format instrumentation JSON
+# TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
 
 ---
 name: Test Python
-on:
+on: # yamllint disable-line rule:truthy rule:comments
   push:
     branches:
       - main
@@ -57,8 +60,6 @@ jobs:
           echo "start_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           python -m venv .venv;
           source .venv/bin/activate;
-          python --version;
-          pip --version;
           python -m pip install --upgrade pip;
           python -m pip install --upgrade wheel;
           python -m pip install black
@@ -66,12 +67,9 @@ jobs:
       - name: Check code formatting with black
         id: check-formatting-run-black
         run: |
-          echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           source .venv/bin/activate;
-          python --version;
-          pip --version;
-          python -m pip freeze;
-          python -m black --check .
+          echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          black --check .
           echo "stop_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
         id: check-formatting-save-env-info
@@ -92,11 +90,11 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
   test:
-    name: Test with pytest
+    name: Test with pytest, mypy, bandit, flake8, and pydocstyle
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, 3.10.4]
+        python-version: [3.8, 3.9, 3.10.4]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -126,24 +124,37 @@ jobs:
           echo "start_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           python -m venv .venv;
           source .venv/bin/activate;
-          python --version;
-          pip --version;
           python -m pip install --upgrade pip;
           python -m pip install --upgrade wheel;
           python -m pip install -r requirements.txt;
           python -m pip install -r requirements-dev.txt;
-          python -m pip freeze;
           echo "stop_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Activate python environment
+        id: activate-env
+        run: |
+          source .venv/bin/activate;
       - name: Test with pytest
         id: test-pytest
         run: |
           echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
-          source .venv/bin/activate;
-          python --version;
-          pip --version;
-          python -m pip freeze;
           pytest;
           echo "stop_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Test with mypy
+        id: test-mypy
+        run: |
+          mypy;
+      - name: Test with bandit
+        id: test-bandit
+        run: |
+          bandit --ini .bandit;
+      - name: Test with flake8
+        id: test-flake8
+        run: |
+          flake8;
+      - name: Test with pydocstyle
+        id: test-pydocstyle
+        run: |
+          pydocstyle;
       - name: Output env info
         id: check-formatting-save-env-info
         run: |
@@ -156,7 +167,7 @@ jobs:
       - name: Generate markdown report
         id: gen-md-report
         run: |
-          echo "# Test with pytest" >> $GITHUB_STEP_SUMMARY
+          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           python .github/workflows/gen_json_test.py >> $GITHUB_STEP_SUMMARY

@@ -9,7 +9,7 @@ import os
 
 metrics = {}
 
-metrics["name"] = "Test with pytest"
+metrics["name"] = "Test with pytest, mypy, bandit, flake8, and pydocstyle"
 
 try:
     metrics["test_cache_hit"] = os.environ["test_cache_hit"]
