@@ -11,6 +11,7 @@
 # * TODO: Remove redundant stuff from check-formatting
 # * TODO: Remove redundant stuff from test
 # * TODO: Add more static tools to test like flake8
+# TODO: Fix: Activate python venv at every step
 # TODO: Properly format instrumentation JSON
 # TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
 
@@ -136,24 +137,29 @@ jobs:
       - name: Test with pytest
         id: test-pytest
         run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pytest;
           echo "stop_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with mypy
         id: test-mypy
         run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           mypy;
       - name: Test with bandit
         id: test-bandit
         run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           bandit --ini .bandit;
       - name: Test with flake8
         id: test-flake8
         run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           flake8;
       - name: Test with pydocstyle
         id: test-pydocstyle
         run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           pydocstyle;
       - name: Output env info
         id: check-formatting-save-env-info
