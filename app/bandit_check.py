@@ -1,4 +1,8 @@
 """Test that bandit works."""
+
+# Uncomment/Comment out everything below to add/remove a bandit
+# check which will fail
+
 from typing import Any
 
 import yaml
