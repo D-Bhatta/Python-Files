@@ -141,11 +141,11 @@ jobs:
           echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pytest;
           echo "stop_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
-      - name: Test with mypy
-        id: test-mypy
-        run: |
-          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
-          mypy;
+      # - name: Test with mypy
+      #   id: test-mypy
+      #   run: |
+      #     source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+      #     mypy;
       - name: Test with bandit
         id: test-bandit
         run: |
