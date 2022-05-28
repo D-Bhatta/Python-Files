@@ -137,38 +137,45 @@ jobs:
         id: test-pytest
         run: |
           source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
-          echo "start_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "start_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pytest;
-          echo "stop_test_test_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "stop_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with mypy
         id: test-mypy
         run: |
           source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+          echo "start_mypy=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           mypy;
+          echo "stop_mypy=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with bandit
         id: test-bandit
         run: |
           source .venv/bin/activate;
+          echo "start_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           bandit --ini .bandit;
+          echo "stop_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with flake8
         id: test-flake8
         run: |
           source .venv/bin/activate;
+          echo "start_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           flake8;
+          echo "stop_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with pydocstyle
         id: test-pydocstyle
         run: |
           source .venv/bin/activate;
+          echo "start_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pydocstyle;
+          echo "stop_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
         id: check-formatting-save-env-info
         run: |
-          echo "test_cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
-          echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
-          python --version
-          pip --version
-          pip freeze
-          echo 'EOF' >> $GITHUB_ENV
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
       - name: Generate markdown report
         id: gen-md-report
         run: |
