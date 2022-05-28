@@ -57,14 +57,14 @@ except KeyError:
 run_black = {}
 
 try:
-    run_black["start_run_black"] = os.environ["start_run_black"]
+    run_black["start_black"] = os.environ["start_black"]
 except KeyError:
-    run_black["start_run_black"] = None
+    run_black["start_black"] = None
 
 try:
-    run_black["stop_run_black"] = os.environ["stop_run_black"]
+    run_black["stop_black"] = os.environ["stop_black"]
 except KeyError:
-    run_black["stop_run_black"] = None
+    run_black["stop_black"] = None
 
 metrics["black"] = run_black
 
