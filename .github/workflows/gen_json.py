@@ -11,49 +11,64 @@ metrics = {}
 
 metrics["name"] = "Check code formatting with black"
 
+env_info = {}
+
 try:
-    metrics["check_fmt_cache_hit"] = os.environ["check_fmt_cache_hit"]
-    if metrics["check_fmt_cache_hit"] == "true":
-        metrics["check_fmt_cache_hit"] = True
-    elif metrics["check_fmt_cache_hit"] == "false":
-        metrics["check_fmt_cache_hit"] = False
+    env_info["cache_hit"] = os.environ["cache_hit"]
+    if env_info["cache_hit"] == "true":
+        env_info["cache_hit"] = True
+    elif env_info["cache_hit"] == "false":
+        env_info["cache_hit"] = False
     else:
-        raise ValueError("Unknown value for key 'check_fmt_cache_hit' in metrics.")
+        raise ValueError("Unknown value for key 'cache_hit'.")
 except KeyError:
-    metrics["check_fmt_cache_hit"] = None
+    env_info["cache_hit"] = None
+
+if not env_info["cache_hit"]:
+    # Cache didn't hit, venv was created, or something went wrong
+    create_venv = {}
+    try:
+        create_venv["start_create_venv"] = os.environ["start_create_venv"]
+    except KeyError:
+        create_venv["start_create_venv"] = None
+
+    try:
+        create_venv["stop_create_venv"] = os.environ["stop_create_venv"]
+    except KeyError:
+        create_venv["stop_create_venv"] = None
+
+    env_info["create_venv"] = create_venv
 
 try:
-    metrics["start_check_formatting_create_environment"] = os.environ[
-        "start_check_formatting_create_environment"
-    ]
+    env_info["python_ver"] = os.environ["python_ver"]
 except KeyError:
-    metrics["start_check_formatting_create_environment"] = None
+    env_info["python_ver"] = None
 
 try:
-    metrics["stop_check_formatting_create_environment"] = os.environ[
-        "stop_check_formatting_create_environment"
-    ]
+    env_info["pip_ver"] = os.environ["pip_ver"]
 except KeyError:
-    metrics["stop_check_formatting_create_environment"] = None
+    env_info["pip_ver"] = None
 
 try:
-    metrics["check_formatting_env_info"] = os.environ["check_formatting_env_info"]
+    env_info["pip_freeze"] = os.environ["pip_freeze"]
 except KeyError:
-    metrics["check_formatting_env_info"] = None
+    env_info["pip_freeze"] = None
+
+run_black = {}
 
 try:
-    metrics["start_check_formatting_run_black"] = os.environ[
-        "start_check_formatting_run_black"
-    ]
+    run_black["start_run_black"] = os.environ["start_run_black"]
 except KeyError:
-    metrics["start_check_formatting_run_black"] = None
+    run_black["start_run_black"] = None
 
 try:
-    metrics["stop_check_formatting_run_black"] = os.environ[
-        "stop_check_formatting_run_black"
-    ]
+    run_black["stop_run_black"] = os.environ["stop_run_black"]
 except KeyError:
-    metrics["stop_check_formatting_run_black"] = None
+    run_black["stop_run_black"] = None
+
+metrics["black"] = run_black
+
+metrics["env_info"] = env_info
 
 with open("gen_json.json", "w", encoding="utf-8") as fio:
     json.dump(metrics, fp=fio, ensure_ascii=False, indent=4)

@@ -11,7 +11,7 @@
 # * TODO: Remove redundant stuff from check-formatting
 # * TODO: Remove redundant stuff from test
 # * TODO: Add more static tools to test like flake8
-# TODO: Fix: Activate python venv at every step
+# * TODO: Fix: Activate python venv at every step
 # TODO: Properly format instrumentation JSON
 # TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
 
@@ -58,29 +58,28 @@ jobs:
         id: check-formatting-create-environment
         if: ${{ steps.venv-cache.outputs.cache-hit == false }}
         run: |
-          echo "start_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "start_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           python -m venv .venv;
           source .venv/bin/activate;
           python -m pip install --upgrade pip;
           python -m pip install --upgrade wheel;
           python -m pip install black
-          echo "stop_check_formatting_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "stop_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Check code formatting with black
         id: check-formatting-run-black
         run: |
           source .venv/bin/activate;
-          echo "start_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "start_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           black --check .
-          echo "stop_check_formatting_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "stop_run_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
         id: check-formatting-save-env-info
         run: |
-          echo "check_fmt_cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
-          echo 'check_formatting_env_info<<EOF' >> $GITHUB_ENV
-          python --version
-          pip --version
-          pip freeze
-          echo 'EOF' >> $GITHUB_ENV
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
       - name: Generate markdown report
         id: gen-md-report
         run: |
