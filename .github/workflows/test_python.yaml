@@ -12,8 +12,8 @@
 # * TODO: Remove redundant stuff from test
 # * TODO: Add more static tools to test like flake8
 # * TODO: Fix: Activate python venv at every step
-# TODO: Properly format instrumentation JSON
-# TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
+# * TODO: Properly format instrumentation JSON
+# * TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
 
 ---
 name: Test Python
