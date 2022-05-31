@@ -1,20 +1,5 @@
 # Action for testing Python code using pytest on a matrix
 # yamllint disable rule:line-length
-# * TODO: Cache up check-formatting
-# * TODO: Add a matrix to check-formatting
-# * TODO: Instrument up check-formatting
-# * TODO: Use python to write json to STDOUT, and append that to GITHUB_ENV
-# * TODO: Instrument up test
-# * TODO: Run it
-# * ! TODO: Fix unnecessary null values in job summaries for test
-# * ! TODO: Fix unnecessary Fix null values in job summaries for check-formatting
-# * TODO: Remove redundant stuff from check-formatting
-# * TODO: Remove redundant stuff from test
-# * TODO: Add more static tools to test like flake8
-# * TODO: Fix: Activate python venv at every step
-# * TODO: Properly format instrumentation JSON
-# * TODO: Add environment info in instrumentation JSON: https://stackoverflow.com/questions/43322014/change-delimiter-in-string-type-of-variable-in-bash
-
 ---
 name: Test Python
 on: # yamllint disable-line rule:truthy rule:comments
