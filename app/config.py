@@ -4,6 +4,7 @@ Drop this module somewhere and import from it.
 
 1. create_handlers(): Return handlers that can be added to a logger.
 """
+from __future__ import annotations
 
 import json
 import logging
