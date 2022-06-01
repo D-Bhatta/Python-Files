@@ -37,7 +37,7 @@ jobs:
           cache-name: cache-python-env-formatting
         with:
           path: .venv
-          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-debug-v1
       - name: Create environment
         # Create a python environment if cache is not present
         id: check-formatting-create-environment
@@ -101,7 +101,7 @@ jobs:
           cache-name: cache-python-env
         with:
           path: .venv
-          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}-debug-v1
       - name: Create environment
         id: create-environment
         if: ${{ steps.venv-cache.outputs.cache-hit == false }}

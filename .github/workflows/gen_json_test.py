@@ -20,7 +20,8 @@ try:
     elif env_info["cache_hit"] == "false":
         env_info["cache_hit"] = False
     else:
-        raise ValueError("Unknown value for key 'cache_hit'.")
+        unknown_cache_hit_val = os.environ.get("cache_hit")
+        raise ValueError(f"Unknown value for key 'cache_hit':{unknown_cache_hit_val}")
 except KeyError:
     env_info["cache_hit"] = None
 
