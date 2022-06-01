@@ -38,7 +38,7 @@ jobs:
           cache-name: cache-python-env-formatting
         with:
           path: .venv
-          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-debug-v1
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
       - name: Create environment
         # Create a python environment if cache is not present
         id: check-formatting-create-environment
@@ -103,19 +103,19 @@ jobs:
           cache-name: cache-python-env
         with:
           path: .venv
-          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}-debug-v1
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Create environment
         id: create-environment
         if: ${{ steps.venv-cache.outputs.cache-hit == false }}
         run: |
-          echo "start_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "start_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           python -m venv .venv;
           source .venv/bin/activate;
           python -m pip install --upgrade pip;
           python -m pip install --upgrade wheel;
           python -m pip install -r requirements.txt;
           python -m pip install -r requirements-dev.txt;
-          echo "stop_test_create_environment=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          echo "stop_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Activate python environment
         id: activate-env
         run: |
