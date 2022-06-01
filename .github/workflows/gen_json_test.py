@@ -17,7 +17,7 @@ try:
     env_info["cache_hit"] = os.environ["cache_hit"]
     if env_info["cache_hit"] == "true":
         env_info["cache_hit"] = True
-    elif env_info["cache_hit"] == "false":
+    elif env_info["cache_hit"] == "false" or env_info["cache_hit"] == "":
         env_info["cache_hit"] = False
     else:
         unknown_cache_hit_val = os.environ.get("cache_hit")
