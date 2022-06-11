@@ -1,0 +1,4 @@
+[pydocstyle]
+add_ignore =
+    # Class `__init__` method is documented in class level docstring, thus disabling check for D107
+    D107
