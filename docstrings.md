@@ -80,48 +80,41 @@ class ExampleClass:
     Properties created with the ``@property`` decorator should be documented
     in the property's getter method.
 
+    Do not include the `self` parameter in the ``Args`` section.
+
     Attributes:
         attr1 (str): Description of `attr1`.
         attr2 (:obj:`int`, optional): Description of `attr2`.
+
+    Args:
+        param1 (str): Description of `param1`.
+        param2 (:obj:`int`, optional): Description of `param2`. Multiple
+            lines are supported.
+        param3 (list(str)): Description of `param3`.
+
+    Raises:
+        AttributeError: The ``Raises`` section is a list of all exceptions
+            that are relevant to the interface.
+        ValueError: If `param2` is equal to `param1`.
 
     Notes:
         This is an example of an indented notes section. It's like any other section,
         but the body is indented to help it stand out from surrounding text. Highlight
         contextually important information here.
+
+    Examples:
+        Examples should be written in doctest format, and should illustrate how
+        to use the function.
+
+        >>> from view_api.models import ExampleClass
+        >>> a1 = ExampleClass(
+        ...     param1="Config",
+        ...     param2=2,
+        ...     param3=["https://api.nasa.gov/planetary/apod"],
+        ... )
     """
 
-    def __init__(self, param1, param2, param3):
-        """Example of docstring on the __init__ method.
-
-        The __init__ method may be documented in a docstring on the
-        __init__ method itself.
-
-        Do not include the `self` parameter in the ``Args`` section.
-
-        Args:
-            param1 (str): Description of `param1`.
-            param2 (:obj:`int`, optional): Description of `param2`. Multiple
-                lines are supported.
-            param3 (list(str)): Description of `param3`.
-
-        Raises:
-            AttributeError: The ``Raises`` section is a list of all exceptions
-                that are relevant to the interface.
-            ValueError: If `param2` is equal to `param1`.
-
-        Examples:
-            Examples should be written in doctest format, and should illustrate how
-            to use the function.
-
-            >>> from view_api.models import APIInfo
-            >>> a1 = APIInfo(
-            ...     name = "APOD",
-            ...     description = "Astronomy Picture of the Day",
-            ...     link = "https://api.nasa.gov/planetary/apod",
-            ...     image = "img/1.jpg",
-            ... )
-
-        """
+    def __init__(self, param1: str, param2: int, param3: list[str]):
         if param1 == param2:
             raise ValueError("param1 may not be equal to param2")
 
@@ -142,8 +135,7 @@ class ExampleClass:
 
     @property
     def readwrite_property(self):
-        """list(str): Properties with both a getter and setter
-        should only be documented in their getter method.
+        """list(str): Properties with both a getter and setter should only be documented in their getter method.
 
         If the setter method contains notable behavior, it should be
         mentioned here.
@@ -227,45 +219,40 @@ class ExampleError(Exception):
     """Exceptions are documented in the same way as classes.
 
     The __init__ method may be documented in a docstring on
-    the __init__ method itself.
+    the class docstring itself.
+
+    Do not include the `self` parameter in the ``Args`` section.
 
     Attributes:
         msg (str): Human readable string describing the exception.
         code (int): Exception error code.
-    """
 
-    def __init__(self, msg, code):
-        """Example of docstring on the __init__ method.
+    Args:
+        msg (str): Human readable string describing the exception.
+        code (:obj:`int`, optional): Error code.
 
-        The __init__ method may be documented in a docstring on the
-        __init__ method itself.
+    Raises:
+        AttributeError: The ``Raises`` section is a list of all exceptions
+            that are relevant to the interface.
+        ValueError: If `msg` is empty.
 
+    Note:
         Do not include the `self` parameter in the ``Args`` section.
 
-        Note:
-            Do not include the `self` parameter in the ``Args`` section.
+    Examples:
+        Examples should be written in doctest format, and should illustrate how
+        to use the function.
 
-        Args:
-            msg (str): Human readable string describing the exception.
-            code (:obj:`int`, optional): Error code.
+        >>> from view_api.models import APIInfo
+        >>> a1 = ExampleError(
+        ...     msg = "APOD",
+        ...     code = 1,
+        ... )
+        >>> [a]
+        [ExampleError("APOD", 1)]
+    """
 
-        Raises:
-            AttributeError: The ``Raises`` section is a list of all exceptions
-                that are relevant to the interface.
-            ValueError: If `msg` is empty.
-
-        Examples:
-            Examples should be written in doctest format, and should illustrate how
-            to use the function.
-
-            >>> from view_api.models import APIInfo
-            >>> a1 = ExampleError(
-            ...     msg = "APOD",
-            ...     code = 1,
-            ... )
-            >>> [a]
-            [ExampleError("APOD", 1)]
-        """
+    def __init__(self, msg: str, code: int):
         if not msg:
             raise ValueError(
                 "The message should not be empty. Please add a helpful error message."
