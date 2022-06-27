@@ -7,7 +7,7 @@ These are sample tests that should pass every time.
 2. `test_hello_world` tests the return of the `hello_world` function in
     `/app/hello_world.py`. It should pass easily.
 """
-from app.app import hello_world
+from app.app import hello_world  # type: ignore[import]
 
 
 def test_always_passes():
