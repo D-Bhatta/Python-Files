@@ -5,18 +5,10 @@ import re
 
 import pytest
 from aiohttp import ClientSession
+from fixtures import n_space
 from requests import Response
 
-from app.config import HttpUrl  # type: ignore[import]  # Ignore missing imports
-
-
-@pytest.fixture
-def n_space(n_generator):
-    """Return a valid namespace."""
-    try:
-        return next(n_generator)
-    except StopIteration:
-        raise ValueError("Add more namespaces to the list of namespaces.")
+from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
 def test_home(flask_server_port, request_session):
