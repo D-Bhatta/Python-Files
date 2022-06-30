@@ -1,0 +1,218 @@
+[
+  {
+    "time": "2022-06-06 04:51:28,203",
+    "log_level": "DEBUG",
+    "line": "28",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "This is a debug message",
+    "index": "0"
+  },
+  {
+    "time": "2022-06-06 04:51:28,204",
+    "log_level": "INFO",
+    "line": "29",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "This is an info message",
+    "index": "1"
+  },
+  {
+    "time": "2022-06-06 04:51:28,205",
+    "log_level": "WARNING",
+    "line": "30",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "This is a warning",
+    "index": "2"
+  },
+  {
+    "time": "2022-06-06 04:51:28,205",
+    "log_level": "ERROR",
+    "line": "31",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "This is an error message",
+    "index": "3"
+  },
+  {
+    "time": "2022-06-06 04:51:28,206",
+    "log_level": "CRITICAL",
+    "line": "32",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "This is critical",
+    "index": "4"
+  },
+  {
+    "time": "2022-06-06 04:51:28,206",
+    "log_level": "ERROR",
+    "line": "36",
+    "name": "__main__",
+    "processID": "6580",
+    "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 34, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 13, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
+    "index": "5"
+  },
+  {
+    "time": "2022-06-06 04:55:22,599",
+    "log_level": "DEBUG",
+    "line": "31",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "This is a debug message",
+    "index": "6"
+  },
+  {
+    "time": "2022-06-06 04:55:22,600",
+    "log_level": "INFO",
+    "line": "32",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "This is an info message",
+    "index": "7"
+  },
+  {
+    "time": "2022-06-06 04:55:22,601",
+    "log_level": "WARNING",
+    "line": "33",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "This is a warning",
+    "index": "8"
+  },
+  {
+    "time": "2022-06-06 04:55:22,606",
+    "log_level": "ERROR",
+    "line": "34",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "This is an error message",
+    "index": "9"
+  },
+  {
+    "time": "2022-06-06 04:55:22,639",
+    "log_level": "CRITICAL",
+    "line": "35",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "This is critical",
+    "index": "10"
+  },
+  {
+    "time": "2022-06-06 04:55:22,649",
+    "log_level": "ERROR",
+    "line": "39",
+    "name": "__main__",
+    "processID": "2732",
+    "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 37, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
+    "index": "11"
+  },
+  {
+    "time": "2022-06-06 09:38:13,701",
+    "log_level": "DEBUG",
+    "line": "35",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "This is a debug message",
+    "index": "12"
+  },
+  {
+    "time": "2022-06-06 09:38:14,097",
+    "log_level": "INFO",
+    "line": "36",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "This is an info message",
+    "index": "13"
+  },
+  {
+    "time": "2022-06-06 09:38:14,247",
+    "log_level": "WARNING",
+    "line": "37",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "This is a warning",
+    "index": "14"
+  },
+  {
+    "time": "2022-06-06 09:38:14,438",
+    "log_level": "ERROR",
+    "line": "38",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "This is an error message",
+    "index": "15"
+  },
+  {
+    "time": "2022-06-06 09:38:14,474",
+    "log_level": "CRITICAL",
+    "line": "39",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "This is critical",
+    "index": "16"
+  },
+  {
+    "time": "2022-06-06 09:38:14,480",
+    "log_level": "ERROR",
+    "line": "43",
+    "name": "__main__",
+    "processID": "2712",
+    "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 41, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
+    "index": "17"
+  },
+  {
+    "time": "2022-06-06 09:39:39,792",
+    "log_level": "DEBUG",
+    "line": "35",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "This is a debug message",
+    "index": "18"
+  },
+  {
+    "time": "2022-06-06 09:39:39,920",
+    "log_level": "INFO",
+    "line": "36",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "This is an info message",
+    "index": "19"
+  },
+  {
+    "time": "2022-06-06 09:39:40,116",
+    "log_level": "WARNING",
+    "line": "37",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "This is a warning",
+    "index": "20"
+  },
+  {
+    "time": "2022-06-06 09:39:40,304",
+    "log_level": "ERROR",
+    "line": "38",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "This is an error message",
+    "index": "21"
+  },
+  {
+    "time": "2022-06-06 09:39:40,626",
+    "log_level": "CRITICAL",
+    "line": "39",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "This is critical",
+    "index": "22"
+  },
+  {
+    "time": "2022-06-06 09:39:40,826",
+    "log_level": "ERROR",
+    "line": "43",
+    "name": "__main__",
+    "processID": "3856",
+    "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 41, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
+    "index": "23"
+  }
+]
