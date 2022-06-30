@@ -57,7 +57,6 @@ def log_server(set_server_environment):
     if code == 0:
         print("Server process exited with code 0.")
     elif code == None:
-        # Some CI environments can take a long time to return error codes.
         raise RuntimeError("The flask server process failed to terminate.")
 
 
