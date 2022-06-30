@@ -105,7 +105,7 @@ def stop_server(server_process) -> int | None:
     # is called
     server_process.terminate()
     # wait a minimum amount of time possible for the process to terminate
-    sleep(2)
+    sleep(10)
     return_code: int = server_process.poll()
     if return_code:
         return return_code
