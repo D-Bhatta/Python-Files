@@ -89,3 +89,12 @@ def n_generator():
 
     _ngen = _n_generator()
     return _ngen
+
+
+@pytest.fixture
+def n_space(n_generator):
+    """Return a valid namespace."""
+    try:
+        return next(n_generator)
+    except StopIteration:
+        raise ValueError("Add more namespaces to the list of namespaces.")
