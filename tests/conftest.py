@@ -49,7 +49,7 @@ def log_server(set_server_environment):
     """Start and later teardown the flask app server."""
     if set_server_environment:
         svr_proc = start_server()
-        sleep(2)
+        sleep(1)
     else:
         raise ValueError("Environment not setup for flask server.")
     yield True
