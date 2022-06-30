@@ -54,7 +54,9 @@ def log_server(set_server_environment):
         raise ValueError("Environment not setup for flask server.")
     yield True
     code: int = stop_server(svr_proc)
-    if not code:
+    if code == 0:
+        print("Server process exited with code 0.")
+    elif code == None:
         raise RuntimeError("The flask server process failed to terminate.")
 
 
