@@ -2,6 +2,8 @@
 
 import pytest
 
+from app.models import HttpUrl  # type: ignore[import]
+
 
 @pytest.fixture(scope="module")
 def flask_server__env():
