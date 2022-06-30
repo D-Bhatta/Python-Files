@@ -1,8 +1,21 @@
 """Store some fixtures here to keep the rest of the test suite clean."""
 
+import json
+
 import pytest
 
 from app.models import HttpUrl  # type: ignore[import]
+
+
+@pytest.fixture(scope="module")
+def log_data() -> list[str]:
+    """Return a sample of log data for testing."""
+    with open("tests/data/log_data.json", encoding="utf-8") as fp:
+        json_data: list[dict[str, str]] = json.load(fp)
+    data: list[str] = []
+    for log in json_data:
+        data.append(json.dumps(log))
+    return data
 
 
 @pytest.fixture(scope="module")
