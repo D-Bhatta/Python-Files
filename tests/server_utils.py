@@ -1,4 +1,6 @@
 """Contains functions to manage the flasks server process."""
+from __future__ import annotations  # Remove when py3.9 is deprecated
+
 import os
 import subprocess
 import sys
