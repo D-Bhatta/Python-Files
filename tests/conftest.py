@@ -7,7 +7,6 @@ To override hooks and define fixtures that are module scoped, create them
 in a directory.
 """
 
-import os
 from pathlib import Path
 from time import sleep
 
@@ -57,7 +56,7 @@ def log_server(set_server_environment):
     code: int = stop_server(svr_proc)
     if code == 0:
         print("Server process exited with code 0.")
-    elif code == None and os.environ.get("CI_TEST_ENV", "False") == "False":
+    elif code == None:
         # Some CI environments can take a long time to return error codes.
         raise RuntimeError("The flask server process failed to terminate.")
 

@@ -104,10 +104,13 @@ def stop_server(server_process) -> int | None:
     # SIGTERM and on Windows the Win32 API function TerminateProcess()
     # is called
     server_process.terminate()
+    return_code: int = server_process.poll()
+    if return_code != None:
+        return return_code
     # wait a minimum amount of time possible for the process to terminate
     sleep(0.2)
-    return_code: int = server_process.poll()
-    if return_code:
+    return_code = server_process.poll()
+    if return_code != None:
         return return_code
     # Couldn't get return code
     return None
