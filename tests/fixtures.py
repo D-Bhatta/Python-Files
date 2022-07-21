@@ -24,7 +24,7 @@ def flask_server__env():
 
     Can be ``development`` or ``production``.
     """
-    return "development"
+    return "production"
 
 
 @pytest.fixture(scope="module")
