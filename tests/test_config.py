@@ -1,4 +1,6 @@
 """Test the code at app/config.py."""
+from __future__ import annotations  # Remove if using python3.10 or greater
+
 import asyncio
 import functools
 import json
@@ -8,11 +10,7 @@ import pytest
 from aiohttp import ClientSession
 from requests import Response
 
-from app.config import (  # type: ignore[import]  # Ignore missing imports
-    LogTransmissionStatus,
-    async_transmit_log,
-    transmission_loop,
-)
+from app.config import LogTransmissionStatus, async_transmit_log, transmission_loop  # type: ignore[import]  # Ignore missing imports
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
