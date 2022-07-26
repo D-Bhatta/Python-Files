@@ -6,8 +6,10 @@ Drop this module somewhere and import from it.
 """
 from __future__ import annotations  # Remove if using python3.10 or greater
 
+import asyncio
 import json
 import logging
+import queue
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -137,6 +139,46 @@ class TransmissionError(Exception):
         self.message = message
 
         super().__init__(self.message)
+
+
+class LogTransmissionStatus(Enum):
+    """Enumerate categories of log transmission status that can exist.
+
+    The transmission process has various phases. They can occur non-linearly,
+    at times concurrent with each other. Errors arise during transmission as well.
+    This enum can be used to articulate the status of the transmission process
+    during each phase.
+
+    Examples:
+    This enum can be used anywhere there is a need to save the current state of the
+    transmission process.
+
+        >>> import functools
+        >>> import threading
+        >>> from time import sleep
+        >>> from app.config import LogTransmissionStatus
+        >>> import queue
+        >>> def do_something():
+        ...    return LogTransmissionStatus.InTransmit
+        >>> do_something()
+        <LogTransmissionStatus.InTransmit: 'The log record is in process of transmission.'>
+        >>> def result_in_queue(q: queue.Queue):
+        ...     sleep(3)
+        ...     q.put(LogTransmissionStatus.Success)
+        ...     q.task_done()
+        >>> q = queue.Queue()
+        >>> t = threading.Thread(target=functools.partial(result_in_queue, q))
+        >>> t.start()
+        >>> result = q.get()
+        >>> print(result)
+        LogTransmissionStatus.Success
+    """
+
+    InTransmit = "The log record is in process of transmission."
+    Success = "The log record has been successfully transmitted to the server."
+    Failed = "The log record failed to transmit successfully."
+    ResultSaved = "The result of the log record transmission has been saved to queue."
+    CleanupSuccessful = "The transmission task has been cleaned up successfully."
 
 
 log_formatter = logging.Formatter(
@@ -337,3 +379,81 @@ async def async_transmit_log(
         )
 
     return response_text, response_status_code
+
+
+async def transmission_loop(
+    q: queue.Queue,
+    log_url: HttpUrl,
+    qsize: int = None,
+) -> LogTransmissionStatus:
+    """Continuously blocks until a record is available in the ``q`` queue, and transmits it.
+
+    Saves response from transmission in the ``result_queue``. If ``qsize`` is not
+    passed to the function, then the loop runs continuously. Else, it exits when logs
+    equal in number to ``qsize`` have been transmitted.
+
+    Args:
+        q: A queue.Queue that contains log records to be transmitted.
+        log_url: Validated ``HttpUrl`` of the log server.
+        qsize (optional): Size of the queue ``q``.
+
+    Returns:
+        LogTransmissionStatus: An ``enum.Enum`` subclass that represents various states
+        of the status of the log transmission.
+
+        Will return ``LogTransmissionStatus.Success`` in case of success.
+        TODO: Add other return values.
+
+    Examples:
+        If ``qsize`` param is more than the actual number of queue items, the thread
+        will block entirely. If ``qsize`` param is not specified, the thread will
+        block until an item arrives in the queue.
+
+        >>> from app.config import transmission_loop
+        >>> from app.models import HttpUrl
+        >>> import asyncio
+        >>> import queue
+        >>> log_data = {
+        ...     "time": "2022-06-06 09:39:40,304",
+        ...     "log_level": "ERROR",
+        ...     "line": "38",
+        ...     "name": "__main__",
+        ...     "processID": "3856",
+        ...     "message": "This is an error message",
+        ...     "index": 21,
+        ... }
+        >>> log_url = HttpUrl(
+        ...     url="http://localhost:3000/log/namespaces/0004a334-ef94-4570-9107-8f0016bd6b59/"
+        ... )
+        >>> queue_with_items: queue.Queue = queue.Queue()
+        >>> for item in log_data:
+        ...     queue_with_items.put(item)
+        ...
+        >>> asyncio.run(transmission_loop(q=queue_with_items, log_url=log_url, qsize=1))
+        <LogTransmissionStatus.Success: 'The log record has been successfully transmitted to the server.'>
+    """
+    loop = asyncio.get_running_loop()
+
+    tasks = set()
+
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+
+    transmissions = qsize
+
+    async with ClientSession(headers=headers) as session:
+        while True:
+            if transmissions:
+                transmissions = transmissions - 1
+            else:
+                break
+            log_data = await loop.run_in_executor(executor=None, func=q.get)
+
+            task = asyncio.create_task(
+                async_transmit_log(log_data=log_data, session=session, url=log_url)
+            )
+            tasks.add(task)
+            task.add_done_callback(tasks.discard)
+
+        await asyncio.sleep(3)
+
+        return LogTransmissionStatus.Success
