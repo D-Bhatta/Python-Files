@@ -8,12 +8,18 @@ from app.models import HttpUrl  # type: ignore[import]
 
 
 @pytest.fixture(scope="module")
-def log_data() -> list[str]:
-    """Return a sample of log data for testing."""
+def log_json_data() -> list[dict[str, str]]:
+    """Return a sample of log data as dict."""
     with open("tests/data/log_data.json", encoding="utf-8") as fp:
         json_data: list[dict[str, str]] = json.load(fp)
+    return json_data
+
+
+@pytest.fixture(scope="module")
+def log_data(log_json_data: list[dict[str, str]]) -> list[str]:
+    """Return a sample of log data as JSON strings."""
     data: list[str] = []
-    for log in json_data:
+    for log in log_json_data:
         data.append(json.dumps(log))
     return data
 
