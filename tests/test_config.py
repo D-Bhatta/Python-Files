@@ -4,9 +4,7 @@ import asyncio
 import pytest
 from aiohttp import ClientSession
 
-from app.config import (
-    async_transmit_log,
-)  # type: ignore[import]  # Ignore missing imports
+from app.config import async_transmit_log  # type: ignore[import]  # Ignore missing imports
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
