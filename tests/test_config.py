@@ -10,7 +10,8 @@ import pytest
 from aiohttp import ClientSession
 from requests import Response
 
-from app.config import LogTransmissionStatus, async_transmit_log, transmission_loop  # type: ignore[import]  # Ignore missing imports
+from app.config import LogTransmissionStatus  # type: ignore[import]  # Ignore missing imports
+from app.config import async_transmit_log, start_transmission_loop, transmission_loop  # type: ignore[import]  # Ignore missing imports
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
@@ -113,6 +114,64 @@ async def test_transmission_loop(
     assert (
         result == LogTransmissionStatus.Success
     ), "Something went wrong while running the transmission loop."
+
+    assert (
+        log_data == log_json_data
+    ), "The log data returned from the server doesn't match the transmitted log data in either value or order of values."
+
+
+def test_start_transmission_loop(
+    queue_with_items: queue.Queue,
+    flask_server_port: str,
+    n_space: str,
+    request_session,
+    log_json_data: list[dict[str, str | int]],
+):
+    """
+    GIVEN: queue object that hold log data. Server url.
+
+    WHEN: There may be items in the queue.
+        `start_transmission_loop` starts transmission and blocks until loop ends.
+
+    THEN: Data is transmitted successfully from the queue to the server.
+    """
+    namespace: str = n_space
+    log_url = HttpUrl(
+        url=f"http://localhost:{flask_server_port}/log/namespaces/{namespace}/"
+    )
+
+    result = start_transmission_loop(q=queue_with_items, log_url=log_url, qsize=24)
+
+    data_url = HttpUrl(
+        url=f"http://localhost:{flask_server_port}/log/data/{namespace}/"
+    )
+    data_url_str = str(data_url.url)
+
+    data_response: Response = request_session.get(data_url_str)
+
+    try:
+        data_dict = data_response.json()
+        if not data_dict[namespace]:
+            raise AssertionError(
+                f"No data transmitted to the server at namespace: {namespace}."
+            )
+        log_data: list[dict[str, str | int]] = data_dict[namespace]
+    except json.JSONDecodeError:
+        raise AssertionError(
+            f"There was a problem decoding to JSON: {data_response.text}"
+        )
+    except KeyError as e:
+        if data_response.text == "This namespace doesn't exist.":
+            raise AssertionError(
+                f"The data was not saved to the namespace: {namespace}."
+            )
+        raise e
+
+    assert (
+        result == LogTransmissionStatus.Success
+    ), "Something went wrong while running the transmission loop."
+
+    log_data.sort(key=lambda x: x["index"])
 
     assert (
         log_data == log_json_data

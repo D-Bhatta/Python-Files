@@ -457,3 +457,54 @@ async def transmission_loop(
         await asyncio.sleep(3)
 
         return LogTransmissionStatus.Success
+
+
+def start_transmission_loop(
+    q: queue.Queue, log_url: HttpUrl, qsize: int = None
+) -> LogTransmissionStatus:
+    """Start the asynchronous ``transmission_loop`` function and block until it returns.
+
+    This function acts as the core entry point for the asynchronous transmission loop.
+    It will block any thread that runs it, and since it is meant to run for the lifetime
+    of the application, this can cause the entire process to block execution. It is
+    recommended that this function be run in an entirely separate thread.
+
+    Args:
+        q: A queue.Queue that contains log records to be transmitted.
+        log_url: Validated ``HttpUrl`` of the log server.
+        qsize (optional): Size of the queue ``q``.
+
+    Returns:
+        LogTransmissionStatus: An ``enum.Enum`` subclass that represents various states
+        of the status of the log transmission.
+
+    Examples:
+        This function will block the thread until the loop ends. If ``qsize`` param is
+        more than the actual number of queue items, the thread will block entirely. If
+        ``qsize`` param is not specified, the thread will block until an item arrives in
+        the queue.
+
+        >>> from app.config import start_transmission_loop
+        >>> from app.models import HttpUrl
+        >>> import queue
+        >>> log_data = {
+        ...     "time": "2022-06-06 09:39:40,304",
+        ...     "log_level": "ERROR",
+        ...     "line": "38",
+        ...     "name": "__main__",
+        ...     "processID": "3856",
+        ...     "message": "This is an error message",
+        ...     "index": 21,
+        ... }
+        >>> log_url = HttpUrl(
+        ...     url="http://localhost:3000/log/namespaces/0004a334-ef94-4570-9107-8f0016bd6b59/"
+        ... )
+        >>> queue_with_items: queue.Queue = queue.Queue()
+        >>> for item in log_data:
+        ...     queue_with_items.put(item)
+        ...
+        >>> start_transmission_loop(q=queue_with_items, log_url=log_url, qsize=1)
+        <LogTransmissionStatus.Success: 'The log record has been successfully transmitted to the server.'>
+    """
+    result = asyncio.run(transmission_loop(q=q, log_url=log_url, qsize=qsize))
+    return result
