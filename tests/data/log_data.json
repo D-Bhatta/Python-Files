@@ -6,7 +6,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "This is a debug message",
-    "index": "0"
+    "index": 0
   },
   {
     "time": "2022-06-06 04:51:28,204",
@@ -15,7 +15,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "This is an info message",
-    "index": "1"
+    "index": 1
   },
   {
     "time": "2022-06-06 04:51:28,205",
@@ -24,7 +24,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "This is a warning",
-    "index": "2"
+    "index": 2
   },
   {
     "time": "2022-06-06 04:51:28,205",
@@ -33,7 +33,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "This is an error message",
-    "index": "3"
+    "index": 3
   },
   {
     "time": "2022-06-06 04:51:28,206",
@@ -42,7 +42,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "This is critical",
-    "index": "4"
+    "index": 4
   },
   {
     "time": "2022-06-06 04:51:28,206",
@@ -51,7 +51,7 @@
     "name": "__main__",
     "processID": "6580",
     "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 34, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 13, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
-    "index": "5"
+    "index": 5
   },
   {
     "time": "2022-06-06 04:55:22,599",
@@ -60,7 +60,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "This is a debug message",
-    "index": "6"
+    "index": 6
   },
   {
     "time": "2022-06-06 04:55:22,600",
@@ -69,7 +69,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "This is an info message",
-    "index": "7"
+    "index": 7
   },
   {
     "time": "2022-06-06 04:55:22,601",
@@ -78,7 +78,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "This is a warning",
-    "index": "8"
+    "index": 8
   },
   {
     "time": "2022-06-06 04:55:22,606",
@@ -87,7 +87,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "This is an error message",
-    "index": "9"
+    "index": 9
   },
   {
     "time": "2022-06-06 04:55:22,639",
@@ -96,7 +96,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "This is critical",
-    "index": "10"
+    "index": 10
   },
   {
     "time": "2022-06-06 04:55:22,649",
@@ -105,7 +105,7 @@
     "name": "__main__",
     "processID": "2732",
     "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 37, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
-    "index": "11"
+    "index": 11
   },
   {
     "time": "2022-06-06 09:38:13,701",
@@ -114,7 +114,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "This is a debug message",
-    "index": "12"
+    "index": 12
   },
   {
     "time": "2022-06-06 09:38:14,097",
@@ -123,7 +123,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "This is an info message",
-    "index": "13"
+    "index": 13
   },
   {
     "time": "2022-06-06 09:38:14,247",
@@ -132,7 +132,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "This is a warning",
-    "index": "14"
+    "index": 14
   },
   {
     "time": "2022-06-06 09:38:14,438",
@@ -141,7 +141,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "This is an error message",
-    "index": "15"
+    "index": 15
   },
   {
     "time": "2022-06-06 09:38:14,474",
@@ -150,7 +150,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "This is critical",
-    "index": "16"
+    "index": 16
   },
   {
     "time": "2022-06-06 09:38:14,480",
@@ -159,7 +159,7 @@
     "name": "__main__",
     "processID": "2712",
     "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 41, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
-    "index": "17"
+    "index": 17
   },
   {
     "time": "2022-06-06 09:39:39,792",
@@ -168,7 +168,7 @@
     "name": "__main__",
     "processID": "3856",
     "message": "This is a debug message",
-    "index": "18"
+    "index": 18
   },
   {
     "time": "2022-06-06 09:39:39,920",
@@ -177,7 +177,7 @@
     "name": "__main__",
     "processID": "3856",
     "message": "This is an info message",
-    "index": "19"
+    "index": 19
   },
   {
     "time": "2022-06-06 09:39:40,116",
@@ -186,7 +186,7 @@
     "name": "__main__",
     "processID": "3856",
     "message": "This is a warning",
-    "index": "20"
+    "index": 20
   },
   {
     "time": "2022-06-06 09:39:40,304",
@@ -195,7 +195,7 @@
     "name": "__main__",
     "processID": "3856",
     "message": "This is an error message",
-    "index": "21"
+    "index": 21
   },
   {
     "time": "2022-06-06 09:39:40,626",
@@ -204,7 +204,7 @@
     "name": "__main__",
     "processID": "3856",
     "message": "This is critical",
-    "index": "22"
+    "index": 22
   },
   {
     "time": "2022-06-06 09:39:40,826",
@@ -213,6 +213,6 @@
     "name": "__main__",
     "processID": "3856",
     "message": "ValueError raised: Traceback (most recent call last): |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 41, in <module> |     raise_error() |   File 'J:/Education/Code/Python/Python-Files/app/logging_check.py', line 14, in raise_error |     raise ValueError('This is an example') | ValueError: This is an example | ",
-    "index": "23"
+    "index": 23
   }
 ]
