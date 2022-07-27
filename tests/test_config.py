@@ -7,11 +7,12 @@ import json
 import queue
 
 import pytest
+import pytest_asyncio
 from aiohttp import ClientSession
 from requests import Response
 
 from app.config import LogTransmissionStatus  # type: ignore[import]  # Ignore missing imports
-from app.config import async_transmit_log, start_transmission_loop, transmission_loop  # type: ignore[import]  # Ignore missing imports
+from app.config import async_transmit_log, start_transmission_loop, transmission_loop, transmission_cleanup  # type: ignore[import]  # Ignore missing imports
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
@@ -176,3 +177,51 @@ def test_start_transmission_loop(
     assert (
         log_data == log_json_data
     ), "The log data returned from the server doesn't match the transmitted log data in either value or order of values."
+
+
+async def do_async_work(num) -> str:
+    """Return result from a mock task."""
+    result = f"task_completed{num}"
+    return result
+
+
+@pytest_asyncio.fixture
+async def async_tasks() -> set[asyncio.Task]:
+    """Create a set of fire and forget tasks."""
+    tasks = set()
+    for i in range(10):
+        task = asyncio.create_task(coro=do_async_work(num=i), name=f"Task:{i}")
+        tasks.add(task)
+    return tasks
+
+
+@pytest.mark.asyncio
+async def test_transmission_cleanup(
+    async_tasks: set[asyncio.Task],
+):
+    """
+    Unit test for ``transmission_cleanup`` function.
+
+    GIVEN: A set of ``asyncio.Task`` that are being completed asynchronously.
+        ``transmission_cleanup`` removes tasks from the set.
+
+    WHEN: There are a number of tasks in the set. ``transmission_cleanup`` is called to
+        cleanup the tasks.
+
+    THEN: ``transmission_cleanup`` returns ``LogTransmissionStatus.CleanupSuccessful``.
+        All tasks have been discarded from the set, and it has 0 items in it.
+    """
+    loop = asyncio.get_running_loop()
+    tasks = list(async_tasks)
+    for task in tasks:
+        result = await loop.run_in_executor(
+            executor=None,
+            func=functools.partial(transmission_cleanup, async_tasks, task),
+        )
+
+        assert (
+            result == LogTransmissionStatus.CleanupSuccessful
+        ), f"Transmission cleanup has failed on {task.get_name()}"
+    assert (
+        len(async_tasks) == 0
+    ), "Cleanup has failed, there are still items remaining in the set."
