@@ -508,3 +508,57 @@ def start_transmission_loop(
     """
     result = asyncio.run(transmission_loop(q=q, log_url=log_url, qsize=qsize))
     return result
+
+
+def transmission_cleanup(
+    tasks: set[asyncio.Task], task: asyncio.Task
+) -> LogTransmissionStatus:
+    """Cleanup after task completion.
+
+    Tasks need to be discarded from the ``tasks`` set, so that they do not keep
+    consuming memory. This function discards them, and assumes that the tasks have been
+    completed.
+
+    Args:
+        tasks: ``set`` of ``asyncio.Task`` objects.
+        task: A task that has been completed.
+
+    Returns:
+        LogTransmissionStatus: Returns ``LogTransmissionStatus.CleanupSuccessful`` if
+        the task cleanup is successful.
+
+    Examples:
+        This function is constrained to the usage of sets only. ``list`` do not have
+        ``discard`` methods.
+
+        >>> import asyncio
+        >>> import functools
+        >>> from app.config import transmission_cleanup
+        >>> async def do_async_work(num) -> str:
+        ...     result = f"task_completed{num}"
+        ...     return result
+        >>> async def async_tasks() -> set[asyncio.Task]:
+        ...     tasks = set()
+        ...     for i in range(3):
+        ...         task = asyncio.create_task(do_async_work(num=i))
+        ...         tasks.add(task)
+        ...     return tasks
+        >>> async def cleanup_tasks():
+        ...     tasks = await async_tasks()
+        ...     loop = asyncio.get_running_loop()
+        ...     async_task_list = list(tasks)
+        ...     results = []
+        ...     for i, task in enumerate(async_task_list):
+        ...         task_result = await loop.run_in_executor(
+        ...             executor=None,
+        ...             func=functools.partial(transmission_cleanup, tasks, task),
+        ...         )
+        ...         results.append(task_result)
+        ...     return results
+        >>> asyncio.run(cleanup_tasks())
+        [<LogTransmissionStatus.CleanupSuccessful: 'The transmission task has been cleaned up successfully.'>, <LogTransmissionStatus.CleanupSuccessful: 'The transmission task has been cleaned up successfully.'>, <LogTransmissionStatus.CleanupSuccessful: 'The transmission task has
+        been cleaned up successfully.'>]
+    """
+    tasks.discard(task)
+
+    return LogTransmissionStatus.CleanupSuccessful
