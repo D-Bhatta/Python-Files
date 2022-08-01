@@ -2,9 +2,11 @@
 from __future__ import annotations  # Remove if using python3.10 or greater
 
 import asyncio
+import collections
 import functools
 import json
 import queue
+from typing import NamedTuple
 
 import pytest
 import pytest_asyncio
@@ -12,7 +14,7 @@ from aiohttp import ClientSession
 from requests import Response
 
 from app.config import LogTransmissionStatus  # type: ignore[import]  # Ignore missing imports
-from app.config import async_transmit_log, start_transmission_loop, transmission_loop, transmission_cleanup  # type: ignore[import]  # Ignore missing imports
+from app.config import async_transmit_log, start_transmission_loop, transmission_loop, transmission_cleanup, save_transmission_result  # type: ignore[import]  # Ignore missing imports
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
@@ -225,3 +227,126 @@ async def test_transmission_cleanup(
     assert (
         len(async_tasks) == 0
     ), "Cleanup has failed, there are still items remaining in the set."
+
+
+@pytest.fixture
+def results_queue(max_q_len=100) -> collections.deque:
+    """Return an empty results queue limited to ``max_q_len``."""
+    q: collections.deque = collections.deque(maxlen=max_q_len)
+    return q
+
+
+class SaveTransmissionResult(NamedTuple):
+    """Represent result of calling ``save_transmission_result``."""
+
+    status: list[LogTransmissionStatus]
+    result_queue: collections.deque
+
+
+@pytest.fixture
+def call_save_transmission_result(
+    results_queue: collections.deque,
+    async_tasks: set[asyncio.Task],
+) -> SaveTransmissionResult:
+    """Call ``save_transmission_result`` and return ``SaveResults`` instance."""
+    statuses = []
+    for task in async_tasks:
+        status = save_transmission_result(result_queue=results_queue, task=task)
+        statuses.append(status)
+
+    save_tr_res = SaveTransmissionResult(status=statuses, result_queue=results_queue)
+    return save_tr_res
+
+
+async def cancelled_async_work() -> str:
+    """Raise ``asyncio.CancelledError`` so that the coroutine ends up being cancelled."""
+    raise asyncio.CancelledError
+
+
+@pytest_asyncio.fixture
+async def cancelled_async_tasks() -> set[asyncio.Task]:
+    """Create a set of fire and forget tasks that end up being cancelled."""
+    tasks = set()
+    for i in range(10):
+        task = asyncio.create_task(
+            coro=cancelled_async_work(), name=f"Cancelled task:{i}"
+        )
+        tasks.add(task)
+    return tasks
+
+
+@pytest.fixture
+def call_save_transmission_result_with_cancelled_tasks(
+    results_queue: collections.deque, cancelled_async_tasks: set[asyncio.Task]
+) -> SaveTransmissionResult:
+    """Call ``save_transmission_result`` on cancelled tasks and return ``SaveResults`` instance."""
+    statuses = []
+    for task in cancelled_async_tasks:
+        status = save_transmission_result(result_queue=results_queue, task=task)
+        statuses.append(status)
+
+    save_tr_res = SaveTransmissionResult(status=statuses, result_queue=results_queue)
+    return save_tr_res
+
+
+class TestSaveTransmissionResult:
+    """
+    Unit test for ``save_transmission_result`` function.
+
+    GIVEN: A queue object with a ``maxlen`` property of 100.
+        ``save_transmission_result`` saves transmission results to the queue.
+
+    WHEN: All ``asyncio.Task`` have finished execution.
+
+    THEN: ``save_transmission_result`` saves the result in the queue.
+        Returns ``LogTransmissionStatus.ResultSaved`` for each saved result.
+        Returns ``LogTransmissionStatus.ResultNotSaved`` in case of failure.
+    """
+
+    def test_return_on_saved(
+        self,
+        call_save_transmission_result: SaveTransmissionResult,
+    ):
+        """THEN: Returns ``LogTransmissionStatus.ResultSaved`` for each saved result."""
+        assert call_save_transmission_result.status == [
+            LogTransmissionStatus.ResultSaved for i in range(10)
+        ], "save_transmission_result returned unexpected values when result should have been saved."
+
+    def test_return_on_not_saved(
+        self, call_save_transmission_result_with_cancelled_tasks: SaveTransmissionResult
+    ):
+        """THEN: Returns ``LogTransmissionStatus.ResultNotSaved`` in case of failure."""
+        assert call_save_transmission_result_with_cancelled_tasks.status == [
+            LogTransmissionStatus.ResultNotSaved for i in range(10)
+        ], "save_transmission_result returned unexpected values when result shouldn't have been saved."
+
+    def test_results_saved_in_queue(
+        self, call_save_transmission_result: SaveTransmissionResult
+    ):
+        """THEN: ``save_transmission_result`` saves the result in the queue."""
+        expected_task_results = set([f"task_completed{num}" for num in range(10)])
+        received_task_results = set()
+
+        len_result_queue: int = len(call_save_transmission_result.result_queue)
+
+        for _ in range(len_result_queue):
+            received_task_results.add(call_save_transmission_result.result_queue.pop())
+
+        missing_results = expected_task_results.difference(received_task_results)
+        extra_results = received_task_results.difference(expected_task_results)
+
+        error_string = (
+            "Results saved in queue don't match the expected result in value."
+        )
+
+        if missing_results:
+            missing_results_string = f" There are a number of missing elements in the queue: {missing_results}."
+            error_string = error_string + missing_results_string
+
+        if extra_results:
+            extra_results_string = (
+                f" There are a number of extra elements in the queue: {extra_results}."
+            )
+            error_string = error_string + extra_results_string
+
+        assert expected_task_results == received_task_results, error_string
