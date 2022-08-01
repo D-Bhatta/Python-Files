@@ -7,6 +7,7 @@ Drop this module somewhere and import from it.
 from __future__ import annotations  # Remove if using python3.10 or greater
 
 import asyncio
+import collections
 import json
 import logging
 import queue
@@ -178,6 +179,7 @@ class LogTransmissionStatus(Enum):
     Success = "The log record has been successfully transmitted to the server."
     Failed = "The log record failed to transmit successfully."
     ResultSaved = "The result of the log record transmission has been saved to queue."
+    ResultNotSaved = "The result of the log record transmission could not be saved."
     CleanupSuccessful = "The transmission task has been cleaned up successfully."
 
 
@@ -562,3 +564,72 @@ def transmission_cleanup(
     tasks.discard(task)
 
     return LogTransmissionStatus.CleanupSuccessful
+
+
+def save_transmission_result(
+    result_queue: collections.deque, task: asyncio.Task
+) -> LogTransmissionStatus:
+    """Save the transmission result in ``result_queue``.
+
+    When a transmission task is completed, the result should be saved in a queue object
+    that is threadsafe. Append to the queue, and pop from the queue, should both be fast
+    to prevent negative effects on performance. The queue should also automatically
+    remove entries over a threshold, to prevent the queue from growing too large.
+
+    Args:
+        result_queue: A queue holds the transmission results.
+        task: A task that has finished execution.
+
+    Returns:
+        LogTransmissionStatus: ``LogTransmissionStatus.ResultNotSaved`` in case of failure
+        and ``LogTransmissionStatus.ResultSaved`` in case of success.
+
+    Examples:
+        This function expects a completed coroutine. In case of running coroutine, or a
+        cancelled coroutine, it will not save the result.
+
+        >>>
+        >>> import collections
+        >>> import asyncio
+        >>> from app.config import save_transmission_result
+        >>>
+        >>> result_queue:collections.deque = collections.deque()
+        >>>
+        >>> async def do_async_work(num) -> str:
+        ...     result = f"task_completed{num}"
+        ...     return result
+        ...
+        >>>
+        >>> async def async_tasks() -> set[asyncio.Task]:
+        ...     tasks = set()
+        ...     for i in range(3):
+        ...         task = asyncio.create_task(do_async_work(num=i))
+        ...         tasks.add(task)
+        ...     return tasks
+        ...
+        >>>
+        >>> def save_result(result_q: collections.deque):
+        ...     tasks = asyncio.run(async_tasks())
+        ...     for task in tasks:
+        ...         save_transmission_result(result_queue=result_q, task=task)
+        ...
+        >>> save_result(result_q=result_queue)
+        >>>
+        >>> for _ in range(len(result_queue)):
+        ...     print(result_queue.pop())
+        ...
+        task_completed1
+        task_completed2
+        task_completed0
+        >>>
+    """
+    try:
+        result = task.result()
+        result_queue.append(result)
+        return LogTransmissionStatus.ResultSaved
+    except asyncio.CancelledError:
+        return LogTransmissionStatus.ResultNotSaved
+    except asyncio.InvalidStateError:
+        return LogTransmissionStatus.ResultNotSaved
+
+    return LogTransmissionStatus.ResultNotSaved
