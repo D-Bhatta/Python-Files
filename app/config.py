@@ -181,6 +181,10 @@ class LogTransmissionStatus(Enum):
     ResultSaved = "The result of the log record transmission has been saved to queue."
     ResultNotSaved = "The result of the log record transmission could not be saved."
     CleanupSuccessful = "The transmission task has been cleaned up successfully."
+    TransmissionResolved = "The transmission has been resolved successfully."
+    TransmissionResolutionFailed = (
+        "The transmission could not be resolved successfully."
+    )
 
 
 log_formatter = logging.Formatter(
@@ -633,3 +637,72 @@ def save_transmission_result(
         return LogTransmissionStatus.ResultNotSaved
 
     return LogTransmissionStatus.ResultNotSaved
+
+
+def resolve_transmission(
+    tasks: set[asyncio.Task], task: asyncio.Task, result_queue: collections.deque
+) -> LogTransmissionStatus:
+    """Resolve the aftermath of a transmission.
+
+    After a transmission has completed it's execution, the ``asyncio.Task`` object
+    should be discarded to prevent excess memory usage. If needed, the result should be
+    saved.
+
+    Args:
+        tasks: ``set`` of ``asyncio.Task`` objects.
+        task: A task that has finished execution.
+        result_queue: A queue holds the transmission results.
+
+    Returns:
+        LogTransmissionStatus: ``LogTransmissionStatus.TransmissionResolutionFailed`` in
+        case of failure and ``LogTransmissionStatus.TransmissionResolved`` in case of
+        success.
+
+    Examples:
+        This function expects a completed coroutine. In case of a running coroutine or a
+        cancelled coroutine, the transmission will not be resolved successfully.
+
+        >>> import collections
+        >>> import asyncio
+        >>> from app.config import resolve_transmission
+        >>>
+        >>> result_queue: collections.deque = collections.deque()
+        >>>
+        >>> async def do_async_work(num) -> str:
+        ...     result = f"task_completed{num}"
+        ...     return result
+        ...
+        >>>
+        >>> async def async_tasks() -> set[asyncio.Task]:
+        ...     tasks = set()
+        ...     for i in range(3):
+        ...         task = asyncio.create_task(do_async_work(num=i))
+        ...         tasks.add(task)
+        ...     return tasks
+        ...
+        >>>
+        >>> async_tasks_set = asyncio.run(async_tasks())
+        >>> tasks = list(async_tasks_set)
+        >>> for task in tasks:
+        ...     resolve_transmission(result_queue=result_queue, task=task, tasks=async_tasks_set)
+        ...
+        <LogTransmissionStatus.TransmissionResolved: 'The transmission has been resolved successfully.'>
+        <LogTransmissionStatus.TransmissionResolved: 'The transmission has been resolved successfully.'>
+        <LogTransmissionStatus.TransmissionResolved: 'The transmission has been resolved successfully.'>
+        >>> for _ in range(len(result_queue)):
+        ...     print(result_queue.pop())
+        ...
+        task_completed0
+        task_completed1
+        task_completed2
+    """
+    saving_result = save_transmission_result(result_queue=result_queue, task=task)
+    cleanup_result = transmission_cleanup(tasks=tasks, task=task)
+
+    if (
+        saving_result == LogTransmissionStatus.ResultSaved
+        and cleanup_result == LogTransmissionStatus.CleanupSuccessful
+    ):
+        return LogTransmissionStatus.TransmissionResolved
+
+    return LogTransmissionStatus.TransmissionResolutionFailed
