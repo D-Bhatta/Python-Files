@@ -440,11 +440,14 @@ async def transmission_loop(
     """
     loop = asyncio.get_running_loop()
 
-    tasks = set()
+    tasks: set[asyncio.Task] = set()
 
     headers: dict[str, str] = {"Content-Type": "application/json"}
 
     transmissions = qsize
+
+    def done_callback(task: asyncio.Task):
+        resolve_transmission(tasks=tasks, task=task)
 
     async with ClientSession(headers=headers) as session:
         while True:
@@ -458,7 +461,7 @@ async def transmission_loop(
                 async_transmit_log(log_data=log_data, session=session, url=log_url)
             )
             tasks.add(task)
-            task.add_done_callback(tasks.discard)
+            task.add_done_callback(done_callback)
 
         await asyncio.sleep(3)
 
