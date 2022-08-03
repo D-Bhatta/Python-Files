@@ -13,8 +13,15 @@ import pytest_asyncio
 from aiohttp import ClientSession
 from requests import Response
 
-from app.config import LogTransmissionStatus  # type: ignore[import]  # Ignore missing imports
-from app.config import async_transmit_log, start_transmission_loop, transmission_loop, transmission_cleanup, save_transmission_result  # type: ignore[import]  # Ignore missing imports
+from app.config import (  # type: ignore[import]  # Ignore missing imports
+    LogTransmissionStatus,
+    async_transmit_log,
+    resolve_transmission,
+    save_transmission_result,
+    start_transmission_loop,
+    transmission_cleanup,
+    transmission_loop,
+)
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
 
 
@@ -279,7 +286,7 @@ async def cancelled_async_tasks() -> set[asyncio.Task]:
 def call_save_transmission_result_with_cancelled_tasks(
     results_queue: collections.deque, cancelled_async_tasks: set[asyncio.Task]
 ) -> SaveTransmissionResult:
-    """Call ``save_transmission_result`` on cancelled tasks and return ``SaveResults`` instance."""
+    """Call ``save_transmission_result`` on cancelled tasks and return ``SaveTransmissionResult`` instance."""
     statuses = []
     for task in cancelled_async_tasks:
         status = save_transmission_result(result_queue=results_queue, task=task)
@@ -350,3 +357,102 @@ class TestSaveTransmissionResult:
             error_string = error_string + extra_results_string
 
         assert expected_task_results == received_task_results, error_string
+
+
+class ResolveTransmissionResult(NamedTuple):
+    """Represent result of calling ``transmission_cleanup``."""
+
+    status: list[LogTransmissionStatus]
+    tasks_set: set[asyncio.Task]
+    result_queue: collections.deque
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Redefine the fixture scoped to session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="class")
+async def async_tasks_2() -> set[asyncio.Task]:
+    """Create a set of fire and forget tasks."""
+    tasks = set()
+    for i in range(10):
+        task = asyncio.create_task(coro=do_async_work(num=i), name=f"Task:{i}")
+        tasks.add(task)
+    return tasks
+
+
+@pytest.fixture(scope="class")
+def call_resolve_transmission(
+    async_tasks_2: set[asyncio.Task],
+) -> ResolveTransmissionResult:
+    """Call ``resolve_transmission`` and return ``ResolveTransmissionResult`` instance."""
+    tasks = list(async_tasks_2)
+    results = []
+
+    q: collections.deque = collections.deque(maxlen=100)
+
+    for task in tasks:
+        result = resolve_transmission(tasks=async_tasks_2, task=task, result_queue=q)
+        results.append(result)
+
+    transmission_cleanup_result = ResolveTransmissionResult(
+        status=results, tasks_set=async_tasks_2, result_queue=q
+    )
+    return transmission_cleanup_result
+
+
+class TestResolveTransmission:
+    """
+    Unit test for ``resolve_transmission`` function.
+
+    GIVEN: A queue object with a ``maxlen`` property of 100.
+        A set of ``asyncio.Task`` that are being completed asynchronously.
+        ``resolve_transmission`` handles the aftermath of the transmission finishing
+        it's execution.
+
+    WHEN: All ``asyncio.Task`` have finished execution.
+
+    THEN: The set of tasks is empty.
+        Result of each completed task is stored inside the queue.
+        Returns ``LogTransmissionStatus.TransmissionResolved`` on success.
+    """
+
+    def test_result_saved(self, call_resolve_transmission: ResolveTransmissionResult):
+        """THEN: Result of each completed task is stored inside the queue."""
+        expected_task_results = set([f"task_completed{num}" for num in range(10)])
+        received_task_results = set(call_resolve_transmission.result_queue)
+
+        missing_results = expected_task_results.difference(received_task_results)
+        extra_results = received_task_results.difference(expected_task_results)
+
+        error_string = (
+            "Results saved in queue don't match the expected result in value."
+        )
+
+        if missing_results:
+            missing_results_string = f" There are a number of missing elements in the queue: {missing_results}."
+            error_string = error_string + missing_results_string
+
+        if extra_results:
+            extra_results_string = (
+                f" There are a number of extra elements in the queue: {extra_results}."
+            )
+            error_string = error_string + extra_results_string
+
+        assert expected_task_results == received_task_results, error_string
+
+    def test_set_empty(self, call_resolve_transmission: ResolveTransmissionResult):
+        """THEN: The set of tasks is empty."""
+        assert (
+            len(call_resolve_transmission.tasks_set) == 0
+        ), "Cleanup has failed, there are still items remaining in the set."
+
+    def test_return(self, call_resolve_transmission: ResolveTransmissionResult):
+        """THEN: Returns ``LogTransmissionStatus.TransmissionResolved`` on success."""
+        assert call_resolve_transmission.status == [
+            LogTransmissionStatus.TransmissionResolved for _ in range(10)
+        ], "`resolve_transmission` returned unexpected values when transmission should have been resolved."
