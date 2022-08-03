@@ -640,7 +640,9 @@ def save_transmission_result(
 
 
 def resolve_transmission(
-    tasks: set[asyncio.Task], task: asyncio.Task, result_queue: collections.deque
+    tasks: set[asyncio.Task],
+    task: asyncio.Task,
+    result_queue: collections.deque | None = None,
 ) -> LogTransmissionStatus:
     """Resolve the aftermath of a transmission.
 
@@ -651,7 +653,7 @@ def resolve_transmission(
     Args:
         tasks: ``set`` of ``asyncio.Task`` objects.
         task: A task that has finished execution.
-        result_queue: A queue holds the transmission results.
+        result_queue (optional): A queue holds the transmission results.
 
     Returns:
         LogTransmissionStatus: ``LogTransmissionStatus.TransmissionResolutionFailed`` in
@@ -696,7 +698,12 @@ def resolve_transmission(
         task_completed1
         task_completed2
     """
-    saving_result = save_transmission_result(result_queue=result_queue, task=task)
+    if result_queue is None:
+        cleanup_result = transmission_cleanup(tasks=tasks, task=task)
+        if cleanup_result == LogTransmissionStatus.CleanupSuccessful:
+            return LogTransmissionStatus.TransmissionResolved
+
+    saving_result = save_transmission_result(result_queue=result_queue, task=task)  # type: ignore[arg-type]  # Ignore incompatible type Optional[deque[Any]]
     cleanup_result = transmission_cleanup(tasks=tasks, task=task)
 
     if (

@@ -456,3 +456,60 @@ class TestResolveTransmission:
         assert call_resolve_transmission.status == [
             LogTransmissionStatus.TransmissionResolved for _ in range(10)
         ], "`resolve_transmission` returned unexpected values when transmission should have been resolved."
+
+
+class ResolveTransmissionResultNoQueue(NamedTuple):
+    """Represent result of calling ``resolve_transmission`` with no result queue."""
+
+    status: list[LogTransmissionStatus]
+    tasks_set: set[asyncio.Task]
+
+
+@pytest.fixture(scope="class")
+def call_resolve_transmission_no_queue(
+    async_tasks_2: set[asyncio.Task],
+) -> ResolveTransmissionResultNoQueue:
+    """Call ``resolve_transmission`` and return ``ResolveTransmissionResultNoQueue`` instance."""
+    tasks = list(async_tasks_2)
+    results = []
+
+    for task in tasks:
+        result = resolve_transmission(tasks=async_tasks_2, task=task)
+        results.append(result)
+
+    transmission_cleanup_result = ResolveTransmissionResultNoQueue(
+        status=results, tasks_set=async_tasks_2
+    )
+    return transmission_cleanup_result
+
+
+class TestResolveTransmissionNoResultQueue:
+    """
+    Unit test for ``resolve_transmission`` function with no result queue.
+
+    GIVEN:
+        A set of ``asyncio.Task`` that are being completed asynchronously.
+        ``resolve_transmission`` handles the aftermath of the transmission finishing
+        it's execution.
+
+    WHEN: All ``asyncio.Task`` have finished execution.
+
+    THEN: The set of tasks is empty.
+        Returns ``LogTransmissionStatus.TransmissionResolved`` on success.
+    """
+
+    def test_set_empty(
+        self, call_resolve_transmission_no_queue: ResolveTransmissionResultNoQueue
+    ):
+        """THEN: The set of tasks is empty."""
+        assert (
+            len(call_resolve_transmission_no_queue.tasks_set) == 0
+        ), "Cleanup has failed, there are still items remaining in the set."
+
+    def test_return(
+        self, call_resolve_transmission_no_queue: ResolveTransmissionResultNoQueue
+    ):
+        """THEN: Returns ``LogTransmissionStatus.TransmissionResolved`` on success."""
+        assert call_resolve_transmission_no_queue.status == [
+            LogTransmissionStatus.TransmissionResolved for _ in range(10)
+        ], "`resolve_transmission` returned unexpected values when transmission should have been resolved."
