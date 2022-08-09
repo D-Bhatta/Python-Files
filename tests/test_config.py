@@ -5,12 +5,18 @@ import asyncio
 import collections
 import functools
 import json
-import queue
+import threading
+from time import sleep
 from typing import NamedTuple
 
 import pytest
 import pytest_asyncio
+import requests
 from aiohttp import ClientSession
+from fixtures import (  # type: ignore[import]  # Ignore missing imports
+    ServerUrls,
+    server_urls,
+)
 from requests import Response
 
 from app.config import (  # type: ignore[import]  # Ignore missing imports
@@ -57,135 +63,282 @@ async def test_async_transmit_log(log_data: list[str], flask_server_port, n_spac
         ), "Couldn't save log message."
 
 
-@pytest.fixture
-def queue_with_items(log_data: list[str]) -> queue.Queue:
-    """Return a queue filled with `log_data` items."""
-    q: queue.Queue = queue.Queue()
+@pytest.fixture(scope="class")
+def q_transmission_log_items(log_data: list[str]) -> collections.deque:
+    """Return a deque filled with `log_data` items."""
+    q: collections.deque = collections.deque(maxlen=100)
     for item in log_data:
-        q.put(item)
+        q.append(item)
     return q
 
 
-@pytest.mark.asyncio
-async def test_transmission_loop(
-    queue_with_items: queue.Queue,
-    flask_server_port: str,
-    n_space: str,
-    request_session,
-    log_json_data: list[dict[str, str | int]],
-):
+@pytest.fixture(scope="class")
+def transmission_results_q() -> collections.deque:
+    """Return an empty deque for storing transmission results."""
+    q: collections.deque = collections.deque(maxlen=100)
+    return q
+
+
+@pytest.fixture(scope="class")
+def transmission_stop_event() -> threading.Event:
+    """Return a ``threading.Event`` instance."""
+    stop_event = threading.Event()
+    return stop_event
+
+
+class TransmissionLoopResult(NamedTuple):
+    """Represent result of calling ``transmission_loop``."""
+
+    status: LogTransmissionStatus
+    namespace: str
+    result_queue: collections.deque
+    log_data_response: list[dict[str, str | int]]
+
+
+@pytest.fixture(scope="class")
+def call_transmission_loop(
+    q_transmission_log_items: collections.deque,
+    server_urls: ServerUrls,
+    transmission_results_q: collections.deque,
+    transmission_stop_event: threading.Event,
+    len_log_json_data: int,
+    request_session: requests.Session,
+) -> TransmissionLoopResult:
+    """Call ``transmission_loop`` function and return a ``TransmissionLoopResult`` instance."""
+    run_loop_result: dict[str, LogTransmissionStatus] = {
+        "result": LogTransmissionStatus.InTransmit
+    }
+
+    def run_loop():
+        result: LogTransmissionStatus = asyncio.run(
+            transmission_loop(
+                q=q_transmission_log_items,
+                log_url=server_urls.log_url,
+                stop_event=transmission_stop_event,
+                result_queue=transmission_results_q,
+            )
+        )
+        run_loop_result["result"] = result
+
+    t = threading.Thread(target=run_loop, name="run_loop")
+    t.start()
+
+    count = 0
+
+    while count < 100:
+        count = count + 1
+        # Using ``len`` on a ``collections.deque`` is not threadsafe.
+        # However, we do not actually need thread safety here, since the loop will
+        # eventually terminate independently of the following ``if`` block.
+        # This does insert some uncertainty into the test, and it should be refactored
+        # to a better solution if possible.
+        if len(transmission_results_q) >= len_log_json_data:
+            break
+        else:
+            sleep(0.1)
+
+    transmission_stop_event.set()
+
+    sleep(0.3)  # Why: Wait for the loop to stop.
+
+    status: LogTransmissionStatus = run_loop_result["result"]
+
+    data_url_str = str(server_urls.data_url.url)
+
+    try:
+        data_response: Response = request_session.get(data_url_str)
+    except Exception as e:
+        raise AssertionError("Failed to make a connection to the logging server.")
+
+    try:
+        data_dict = data_response.json()
+        log_data: list[dict[str, str | int]] = data_dict[server_urls.namespace]
+    except json.JSONDecodeError:
+        raise AssertionError(
+            f"There was a problem decoding to JSON. Response text: {data_response.text}"
+        )
+    except KeyError as e:
+        if data_response.text == "This namespace doesn't exist.":
+            raise AssertionError(
+                f"The data was not saved to the namespace: {server_urls.namespace}"
+            )
+        raise e
+
+    result = TransmissionLoopResult(
+        status=status,
+        namespace=server_urls.namespace,
+        result_queue=transmission_results_q,
+        log_data_response=log_data,
+    )
+    return result
+
+
+class TestTransmissionLoop:
     """
-    GIVEN: queue object that hold log data. Server url.
+    Unit test for ``transmission_loop`` function.
+
+    GIVEN: A queue object that hold log data in json format.
+        Validated server url where log data will be transmitted.
+        ``threading.Event`` that is used to communicate loop termination.
+        A queue object that stores transmission results.
 
     WHEN: There is an item in the queue.
         ``transmission_loop`` is used to continuously transmit log data.
 
     THEN: Data is transmitted successfully from the queue to the server.
+        Transmission aftermath is resolved.
+        Returns ``LogTransmissionStatus.Success`` on completion.
     """
-    # get each item from queue and pass it to the async_transmit_log function
-    namespace: str = n_space
-    log_url = HttpUrl(
-        url=f"http://localhost:{flask_server_port}/log/namespaces/{namespace}/"
-    )
 
-    result = await transmission_loop(q=queue_with_items, log_url=log_url, qsize=24)
+    def test_status(self, call_transmission_loop: TransmissionLoopResult):
+        """THEN: Returns ``LogTransmissionStatus.Success`` on completion."""
+        error_string = "`transmission_loop` failed to return success."
+        assert (
+            call_transmission_loop.status == LogTransmissionStatus.Success
+        ), error_string
 
-    data_url = HttpUrl(
-        url=f"http://localhost:{flask_server_port}/log/data/{namespace}/"
-    )
-    data_url_str = str(data_url.url)
+    def test_result_queue(
+        self,
+        call_transmission_loop: TransmissionLoopResult,
+        log_json_data: list[dict[str, str | int]],
+    ):
+        """THEN: Transmission aftermath is resolved."""
+        expected_results: list[tuple[str, int]] = [
+            (f"Received JSON Data as POST for {call_transmission_loop.namespace}", 200)
+            for _ in range(len(log_json_data))
+        ]
 
-    loop = asyncio.get_running_loop()
-
-    data_response: Response = await loop.run_in_executor(
-        executor=None, func=functools.partial(request_session.get, data_url_str)
-    )
-
-    try:
-        data_dict = data_response.json()
-        if not data_dict[namespace]:
-            raise AssertionError(
-                f"No data transmitted to the server at namespace: {namespace}."
-            )
-        log_data: list[dict[str, str | int]] = data_dict[namespace]
-    except json.JSONDecodeError:
-        raise AssertionError(
-            f"There was a problem decoding to JSON: {data_response.text}"
+        error_string = (
+            "The task results in the queue are not as expected in order or form."
         )
-    except KeyError as e:
-        if data_response.text == "This namespace doesn't exist.":
-            raise AssertionError(
-                f"The data was not saved to the namespace: {namespace}."
-            )
-        raise e
 
-    log_data.sort(key=lambda x: x["index"])
+        assert (
+            list(call_transmission_loop.result_queue) == expected_results
+        ), error_string
 
-    assert (
-        result == LogTransmissionStatus.Success
-    ), "Something went wrong while running the transmission loop."
+    def test_data_transmission(
+        self,
+        call_transmission_loop: TransmissionLoopResult,
+        log_json_data: list[dict[str, str | int]],
+    ):
+        """THEN: Data is transmitted successfully from the queue to the server."""
+        assert (
+            call_transmission_loop.log_data_response
+        ), f"No data was transmitted to the server at namespace: {call_transmission_loop.namespace}"
 
-    assert (
-        log_data == log_json_data
-    ), "The log data returned from the server doesn't match the transmitted log data in either value or order of values."
+        call_transmission_loop.log_data_response.sort(key=lambda x: x["index"])
+        error_string = "The log data returned from the server doesn't match the transmitted log data in either value or order of values."
+
+        assert call_transmission_loop.log_data_response == log_json_data, error_string
 
 
-def test_start_transmission_loop(
-    queue_with_items: queue.Queue,
-    flask_server_port: str,
-    n_space: str,
-    request_session,
-    log_json_data: list[dict[str, str | int]],
-):
-    """
-    GIVEN: queue object that hold log data. Server url.
+class StartTransmissionLoopResult(NamedTuple):
+    """Represent result of calling ``transmission_loop``."""
 
-    WHEN: There may be items in the queue.
-        `start_transmission_loop` starts transmission and blocks until loop ends.
+    status: LogTransmissionStatus
+    namespace: str
+    result_queue: collections.deque
 
-    THEN: Data is transmitted successfully from the queue to the server.
-    """
-    namespace: str = n_space
-    log_url = HttpUrl(
-        url=f"http://localhost:{flask_server_port}/log/namespaces/{namespace}/"
-    )
 
-    result = start_transmission_loop(q=queue_with_items, log_url=log_url, qsize=24)
+@pytest.fixture(scope="class")
+def call_start_transmission_loop(
+    q_transmission_log_items: collections.deque,
+    server_urls: ServerUrls,
+    transmission_results_q: collections.deque,
+    transmission_stop_event: threading.Event,
+    len_log_json_data: int,
+) -> StartTransmissionLoopResult:
+    """Call ``start_transmission_loop`` and return a ``StartTransmissionLoopResult`` instance."""
+    transmission_loop_result: dict[str, LogTransmissionStatus] = {
+        "result": LogTransmissionStatus.InTransmit
+    }
 
-    data_url = HttpUrl(
-        url=f"http://localhost:{flask_server_port}/log/data/{namespace}/"
-    )
-    data_url_str = str(data_url.url)
-
-    data_response: Response = request_session.get(data_url_str)
-
-    try:
-        data_dict = data_response.json()
-        if not data_dict[namespace]:
-            raise AssertionError(
-                f"No data transmitted to the server at namespace: {namespace}."
-            )
-        log_data: list[dict[str, str | int]] = data_dict[namespace]
-    except json.JSONDecodeError:
-        raise AssertionError(
-            f"There was a problem decoding to JSON: {data_response.text}"
+    def run_start_loop():
+        result = start_transmission_loop(
+            q=q_transmission_log_items,
+            log_url=server_urls.log_url,
+            stop_event=transmission_stop_event,
+            result_queue=transmission_results_q,
         )
-    except KeyError as e:
-        if data_response.text == "This namespace doesn't exist.":
-            raise AssertionError(
-                f"The data was not saved to the namespace: {namespace}."
+        transmission_loop_result["result"] = result
+
+    t = threading.Thread(target=run_start_loop, name="start_run_loop")
+
+    t.start()
+
+    count = 0
+
+    while count < 100:
+        count = count + 1
+        # Using ``len`` on a ``collections.deque`` is not threadsafe.
+        # However, we do not actually need thread safety here, since the loop will
+        # eventually terminate independently of the following ``if`` block.
+        # This does insert some uncertainty into the test, and it should be refactored
+        # to a better solution if possible.
+        if len(transmission_results_q) >= len_log_json_data:
+            break
+        else:
+            sleep(0.1)
+
+    transmission_stop_event.set()
+
+    sleep(0.3)  # Why: Wait for the loop to stop.
+
+    status: LogTransmissionStatus = transmission_loop_result["result"]
+
+    result = StartTransmissionLoopResult(
+        status=status,
+        namespace=server_urls.namespace,
+        result_queue=transmission_results_q,
+    )
+
+    return result
+
+
+class TestStartTransmissionLoop:
+    """
+    Unit test for ``start_transmission_loop`` function.
+
+    GIVEN: A queue object that hold log data in json format.
+        Validated server url where log data will be transmitted.
+        ``threading.Event`` that is used to communicate loop termination.
+        A queue object that stores transmission results.
+
+    WHEN: There is an item in the queue.
+        ``start_transmission_loop`` starts transmission and blocks until loop ends.
+
+    THEN: Returns ``LogTransmissionStatus.Success`` on completion.
+        Transmission aftermath is resolved.
+    """
+
+    def test_return(self, call_start_transmission_loop: StartTransmissionLoopResult):
+        """THEN: Returns ``LogTransmissionStatus.Success`` on completion."""
+        error_string = f"`start_transmission_loop` failed to return {LogTransmissionStatus.Success}"
+        assert (
+            call_start_transmission_loop.status == LogTransmissionStatus.Success
+        ), error_string
+
+    def test_aftermath(
+        self,
+        call_start_transmission_loop: StartTransmissionLoopResult,
+        log_json_data: list[dict[str, str | int]],
+    ):
+        """THEN: Transmission aftermath is resolved."""
+        expected_results: list[tuple[str, int]] = [
+            (
+                f"Received JSON Data as POST for {call_start_transmission_loop.namespace}",
+                200,
             )
-        raise e
+            for _ in range(len(log_json_data))
+        ]
 
-    assert (
-        result == LogTransmissionStatus.Success
-    ), "Something went wrong while running the transmission loop."
+        error_string = (
+            "The task results in the queue are not as expected in order or form."
+        )
 
-    log_data.sort(key=lambda x: x["index"])
-
-    assert (
-        log_data == log_json_data
-    ), "The log data returned from the server doesn't match the transmitted log data in either value or order of values."
+        assert (
+            list(call_start_transmission_loop.result_queue) == expected_results
+        ), error_string
 
 
 async def do_async_work(num) -> str:

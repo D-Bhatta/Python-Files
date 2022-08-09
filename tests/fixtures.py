@@ -1,6 +1,7 @@
 """Store some fixtures here to keep the rest of the test suite clean."""
 
 import json
+from typing import NamedTuple
 
 import pytest
 
@@ -13,6 +14,13 @@ def log_json_data() -> list[dict[str, str]]:
     with open("tests/data/log_data.json", encoding="utf-8") as fp:
         json_data: list[dict[str, str]] = json.load(fp)
     return json_data
+
+
+@pytest.fixture(scope="module")
+def len_log_json_data(log_json_data: list[dict[str, str]]) -> int:
+    """Return length of log data dictionary."""
+    length = len(log_json_data)
+    return length
 
 
 @pytest.fixture(scope="module")
@@ -104,3 +112,36 @@ def n_space(n_generator):
         return next(n_generator)
     except StopIteration:
         raise ValueError("Add more namespaces to the list of namespaces.")
+
+
+@pytest.fixture(scope="class")
+def n_space_class_scoped(n_generator):
+    """Return a valid namespace."""
+    try:
+        return next(n_generator)
+    except StopIteration:
+        raise ValueError("Add more namespaces to the list of namespaces.")
+
+
+class ServerUrls(NamedTuple):
+    """Store validated urls and namespace."""
+
+    namespace: str
+    log_url: HttpUrl
+    data_url: HttpUrl
+
+
+@pytest.fixture(scope="class")
+def server_urls(
+    flask_server_port: str,
+    n_space_class_scoped: str,
+) -> ServerUrls:
+    """Return validated urls to the logging server. Also return the namespace used."""
+    namespace: str = n_space_class_scoped
+    log_url = HttpUrl(
+        url=f"http://localhost:{flask_server_port}/log/namespaces/{namespace}/"
+    )
+    data_url = HttpUrl(
+        url=f"http://localhost:{flask_server_port}/log/data/{namespace}/"
+    )
+    return ServerUrls(namespace=namespace, log_url=log_url, data_url=data_url)
