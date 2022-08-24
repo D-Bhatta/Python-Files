@@ -5,6 +5,7 @@ import asyncio
 import collections
 import functools
 import json
+import logging
 import threading
 from time import sleep
 from typing import NamedTuple
@@ -13,13 +14,12 @@ import pytest
 import pytest_asyncio
 import requests
 from aiohttp import ClientSession
-from fixtures import (  # type: ignore[import]  # Ignore missing imports
-    ServerUrls,
-    server_urls,
-)
+from fixtures import ServerUrls  # type: ignore[import]  # Ignore missing imports
+from fixtures import server_urls  # type: ignore[import]  # Ignore missing imports
 from requests import Response
 
 from app.config import (  # type: ignore[import]  # Ignore missing imports
+    LogJSONFormatter,
     LogTransmissionStatus,
     async_transmit_log,
     resolve_transmission,
@@ -29,6 +29,9 @@ from app.config import (  # type: ignore[import]  # Ignore missing imports
     transmission_loop,
 )
 from app.models import HttpUrl  # type: ignore[import]  # Ignore missing imports
+
+NUM_ITEMS_LARGE = 10000
+NUM_ITEMS_SMALL = 100
 
 
 @pytest.mark.asyncio
@@ -666,3 +669,143 @@ class TestResolveTransmissionNoResultQueue:
         assert call_resolve_transmission_no_queue.status == [
             LogTransmissionStatus.TransmissionResolved for _ in range(10)
         ], "`resolve_transmission` returned unexpected values when transmission should have been resolved."
+
+
+@pytest.fixture(scope="class")
+def log_strings() -> set[str]:
+    """Return a set of log strings."""
+    strings: set[str] = set()
+
+    for i in range(NUM_ITEMS_SMALL):
+        strings.add(f"Log message: {i}")
+
+    return strings
+
+
+class CustomHandlerForTest(logging.Handler):
+    """A custom ``logging.Handler`` class for testing.
+
+    Instead of emitting log messages, it saves them to the passed
+    ``emit_set``.
+
+    Attributes:
+        emit_set (set[str]): set that contains
+
+    Args:
+        emit_set: Stores formatted log messages.
+    """
+
+    def __init__(self, emit_set: set[str], level=logging.DEBUG) -> None:
+        super().__init__(level)
+        self.emit_set: set[str] = emit_set
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Save the record in ``emit_set``."""
+        msg = self.format(record)
+        self.emit_set.add(msg)
+
+
+class LogJSONFormatterResult(NamedTuple):
+    """Represent result of using ``LogJSONFormatter``."""
+
+    log_dicts: list[dict[str, str]]
+    err_set: list[str]
+
+
+@pytest.fixture(scope="class")
+def call_LogJSONFormatter(log_strings: set[str]) -> LogJSONFormatterResult:
+    """Call `LogJSONFormatter.format` and return the result."""
+    emit_set: set[str] = set()
+    log_json_formatter = LogJSONFormatter()
+
+    custom_handler = CustomHandlerForTest(emit_set=emit_set)
+    custom_handler.setFormatter(log_json_formatter)
+
+    logger = logging.getLogger("test-logger")
+    logger.addHandler(custom_handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    count = 0
+
+    for log in log_strings:
+        """
+        +-------+ +1 +--------+ +1 +--------+ +1 +--------+ +1 +---------+ +1 +---------+ +1+----------+
+        | count +--->+ count  +----> count  +--->+ count  +--->+ count   +--->+ count   +-->+ count    |
+        | = 0   |    | = 1    |    | = 2    |    | = 3    |    | = 4     |    | = 5     |   | = 6      |
+        +----+--+    +--------+    +--------+    +--------+    +---------+    +---------+   +-----+----+
+            ^                                                                                    |
+            |                                                                                    |
+            |                                      set count = 0                                 |
+            +------------------------------------------------------------------------------------+
+        Made with ``https://asciiflow.com/legacy/``.
+        """
+        if count == 0:
+            logger.debug(log)
+        if count == 1:
+            logger.info(log)
+        if count == 2:
+            logger.warning(log)
+        if count == 3:
+            logger.error(log)
+        if count == 4:
+            logger.critical(log)
+        if count == 5:
+            try:
+                raise ValueError(log)
+            except ValueError:
+                logger.exception(log)
+        count = count + 1
+        if count == 6:
+            count = 0
+
+    log_dicts: list[dict[str, str]] = list()
+    err_set: list[str] = list()
+
+    for lg in emit_set:
+        try:
+            log_dict = json.loads(lg)
+            log_dicts.append(log_dict)
+
+        except json.JSONDecodeError:
+            err_string = f"Didn't format them into json correctly: {log}"
+            err_set.append(err_string)
+    return LogJSONFormatterResult(log_dicts=log_dicts, err_set=err_set)
+
+
+class TestLogJSONFormatter:
+    """Unit test for `LogJSONFormatter` class.
+
+    GIVEN: `LogJSONFormatter` formats log records.
+
+    WHEN: Log records are generated.
+
+    THEN: `LogJSONFormatter` formats them correctly.
+        The message is correctly stored in the JSON string.
+    """
+
+    def test_log_format_is_json(
+        self, call_LogJSONFormatter: LogJSONFormatterResult, log_strings: set[str]
+    ):
+        """THEN: `LogJSONFormatter` formats them correctly."""
+        assert (
+            call_LogJSONFormatter.err_set == []
+        ), "Logs were not correctly formatted into JSON."
+
+    def test_messages(
+        self, call_LogJSONFormatter: LogJSONFormatterResult, log_strings: set[str]
+    ):
+        """THEN: The message is correctly stored in the JSON string."""
+        messages: set[str] = set()
+        for log_dict in call_LogJSONFormatter.log_dicts:
+            try:
+                if " | " in log_dict["message"][:20]:
+                    msg = log_dict["message"][:20]
+                    index = msg.find(" | ")
+                    msg = msg[:index]
+                    messages.add(msg)
+                else:
+                    messages.add(log_dict["message"])
+            except KeyError:
+                messages.add("There is no key `message` in the log.")
+        assert messages == log_strings, "Messages were not properly logged."
