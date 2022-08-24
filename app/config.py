@@ -201,6 +201,128 @@ log_formatter = logging.Formatter(
 )
 
 
+class LogJSONFormatter(logging.Formatter):
+    """Formats log records as JSON strings.
+
+    Log records contain message strings, as well as other data about the log. They may
+    also contain stack traces from exceptions. All of these need to be formatted
+    by the logger as JSON before being logged for easier and structured parsing.
+
+    Attributes:
+        fmt (str): Format strings.
+
+    Args:
+        fmt (str, optional): Format strings.
+
+    Examples:
+        This formatter can be used without the ``fmt`` argument.
+
+        >>> import logging
+        >>> from app.config import LogJSONFormatter
+        >>> logger = logging.getLogger("logger-new")
+        >>> stream_handler = logging.StreamHandler()
+        >>> formatter = LogJSONFormatter()
+        >>> stream_handler.setFormatter(formatter)
+        >>> stream_handler.setLevel(logging.DEBUG)
+        >>> logger.addHandler(stream_handler)
+        >>> logger.setLevel(logging.DEBUG)
+        >>>
+        >>> logger.debug("Hello")
+        {"asctime":"2022-08-17 10:43:44.888","filename":"<stdin>","full_file_path":"<stdin>","function_name":"<module>","level":"DEBUG","line_number":1,"message":"Hello","module_name":"<stdin>","name":"logger-new","process_id":13904,"process_name":"MainProcess","thread_id":10664,"thread_name":"MainThread"}
+        >>>
+    """
+
+    default_msec_format = "%s.%03d"
+
+    def json_format(self, record: logging.LogRecord, asctime: str, msg: str) -> str:
+        """Return a JSON string from arguments.
+
+        Args:
+            record: ``LogRecord`` instance from which
+                attributes will be extracted.
+            asctime: RFC 3339 formatted time string.
+            msg: The log message.
+
+        Returns:
+            A JSON encoded string mapping record attributes to
+            corresponding keys and values. For example:
+
+            {
+                "asctime": "Formatted time when log originated",
+                "filename": "Name of the file",
+                "full_file_path": "Full path to file(optional)",
+                "function_name": "Name of the function",
+                "level": "DEBUG/INFO/WARNING/ERROR/CRITICA/EXCEPTION",
+                "line_number": "Line number of the log(optional)",
+                "message": "Message string",
+                "module_name": "Name of the module",
+                "name": "Name of the logger",
+                "process_id": "Id of the process(optional)",
+                "process_name": "Name of the process(optional)",
+                "thread_id": "Id of the thread(optional)",
+                "thread_name": "Name of the thread(optional)"
+            }
+        """
+        return json.dumps(
+            {
+                "asctime": asctime,
+                "filename": record.filename,
+                "full_file_path": record.pathname,
+                "function_name": record.funcName,
+                "level": record.levelname,
+                "line_number": record.lineno,
+                "message": msg,
+                "module_name": record.module,
+                "name": record.name,
+                "process_id": record.process,
+                "process_name": record.processName,
+                "thread_id": record.thread,
+                "thread_name": record.threadName,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format the log as JSON.
+
+        Formats the exception message and traceback into a single line.
+
+        Args:
+            record: The log record.
+
+        Returns:
+            A JSON encoded string mapping record attributes to
+            corresponding keys and values. For example:
+
+            {
+                "asctime": "Formatted time when log originated",
+                "filename": "Name of the file",
+                "full_file_path": "Full path to file(optional)",
+                "function_name": "Name of the function",
+                "level": "DEBUG/INFO/WARNING/ERROR/CRITICA/EXCEPTION",
+                "line_number": "Line number of the log(optional)",
+                "message": "Message string",
+                "module_name": "Name of the module",
+                "name": "Name of the logger",
+                "process_id": "Id of the process(optional)",
+                "process_name": "Name of the process(optional)",
+                "thread_id": "Id of the thread(optional)",
+                "thread_name": "Name of the thread(optional)"
+            }
+        """
+        exception_msg = ""
+        if record.exc_info:
+            exception_msg = repr(self.formatException(record.exc_info))
+            exception_msg = exception_msg.replace("\n", " | ")
+
+        msg = record.getMessage()
+        asctime = self.formatTime(record, self.datefmt)
+        if exception_msg:
+            msg = msg + " | " + exception_msg
+        return self.json_format(record=record, asctime=asctime, msg=msg)
+
+
 def create_handlers(
     file_path: Path | str = "server.log",
     log_level: int = logging.DEBUG,
