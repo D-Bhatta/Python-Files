@@ -201,6 +201,48 @@ log_formatter = logging.Formatter(
 )
 
 
+class StructuredMessage:
+    """JSON structured log message.
+
+    Create a structured log message that will be encoded to JSON.
+
+    Structured logging provides context to log messages, so that
+    a clear and comprehensive picture of the state of the application
+    can be observed when looking at the logs. This class helps easily
+    capture log messages, as well as any other associated context, as
+    a JSON string.
+
+    After passing the log message as the first argument, other values
+    can be logged by passing them as keyword arguments.
+
+    The message and keyword arguments will be encoded into a JSON
+    string. The message will be encoded with the key ``message`` as
+    part of the JSON string. All keys in the JSON string will be sorted.
+
+    Args:
+        message: The log message.
+
+    Examples:
+        Calling ``str`` on this class will return ``JSON::`` followed by a
+        JSON encoded string.
+
+        >>> from app.config import StructuredMessage
+        >>> str(StructuredMessage(message="message one", name="computer", address="Gaia", phone=1234567890))
+        'JSON::{"address":"Gaia","message":"message one","name":"computer","phone":1234567890}'
+    """
+
+    def __init__(self, message: str, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.kwargs["message"] = message
+
+    def __str__(self) -> str:
+        """Encode the message and keyword arguments as JSON string."""
+        json_encoded_message = "JSON::%s" % json.dumps(
+            self.kwargs, indent=None, separators=(",", ":"), sort_keys=True
+        )
+        return json_encoded_message
+
+
 class LogJSONFormatter(logging.Formatter):
     """Formats log records as JSON strings.
 

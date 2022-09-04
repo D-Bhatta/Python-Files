@@ -8,7 +8,7 @@ import json
 import logging
 import threading
 from time import sleep
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import pytest
 import pytest_asyncio
@@ -21,6 +21,7 @@ from requests import Response
 from app.config import (  # type: ignore[import]  # Ignore missing imports
     LogJSONFormatter,
     LogTransmissionStatus,
+    StructuredMessage,
     async_transmit_log,
     resolve_transmission,
     save_transmission_result,
@@ -809,3 +810,51 @@ class TestLogJSONFormatter:
             except KeyError:
                 messages.add("There is no key `message` in the log.")
         assert messages == log_strings, "Messages were not properly logged."
+
+
+@pytest.fixture
+def structured_log_messages() -> list[dict[str, Any]]:
+    """Return a ``list`` of ``dicts`` that look like structured log messages."""
+    structured_log_messages: list[dict[str, Any]] = [
+        {
+            "address": "address:%s" % i,
+            "another_dict": {
+                "another_message": "another_message:%s" % i,
+                "another_num": i,
+            },
+            "car": "car:%s" % i,
+            "message": "message:%s" % i,
+            "name": "name:%s" % i,
+            "num": i,
+        }
+        for i in range(NUM_ITEMS_SMALL)
+    ]
+    return structured_log_messages
+
+
+def test_StructuredMessage(structured_log_messages: list[dict[str, Any]]):
+    """Unit test for ``StructuredMessage``.
+
+    GIVEN: ``StructuredMessage`` creates a structured log message.
+
+    WHEN: Message and keyword arguments are passed to ``StructuredMessage``.
+
+    THEN: ``StructuredMessage`` 's ``__str__`` returns a JSON string.
+    """
+    expected_messages = []
+    for item in structured_log_messages:
+        msg = str(
+            StructuredMessage(
+                message=item["message"],
+                name=item["name"],
+                address=item["address"],
+                car=item["car"],
+                num=item["num"],
+                another_dict=item["another_dict"],
+            )
+        )
+        expected_messages.append(json.loads(msg[6:]))
+
+    assert (
+        expected_messages == structured_log_messages
+    ), "Structured messages are incorrect."
