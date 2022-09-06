@@ -2,7 +2,9 @@
 
 Drop this module somewhere and import from it.
 
-1. create_handlers(): Return handlers that can be added to a logger.
+1. ``create_handlers()``: Return handlers that can be added to a logger.
+2. ``StructuredMessage``: JSON structured log message.
+3. ``LogJSONFormatter``: Formats log records as JSON strings.
 """
 from __future__ import annotations  # Remove if using python3.10 or greater
 
