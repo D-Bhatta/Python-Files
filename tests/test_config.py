@@ -800,10 +800,9 @@ class TestLogJSONFormatter:
         messages: set[str] = set()
         for log_dict in call_LogJSONFormatter.log_dicts:
             try:
-                if " | " in log_dict["message"][:20]:
-                    msg = log_dict["message"][:20]
-                    index = msg.find(" | ")
-                    msg = msg[:index]
+                if " | Execution Information: | " in log_dict["message"]:
+                    idx = log_dict["message"].find(" | Execution Information: | ")
+                    msg = log_dict["message"][:idx]
                     messages.add(msg)
                 else:
                     messages.add(log_dict["message"])

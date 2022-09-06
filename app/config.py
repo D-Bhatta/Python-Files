@@ -361,7 +361,7 @@ class LogJSONFormatter(logging.Formatter):
         msg = record.getMessage()
         asctime = self.formatTime(record, self.datefmt)
         if exception_msg:
-            msg = msg + " | " + exception_msg
+            msg = msg + " | Execution Information: | " + exception_msg
         return self.json_format(record=record, asctime=asctime, msg=msg)
 
 
