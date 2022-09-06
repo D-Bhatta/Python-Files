@@ -276,7 +276,13 @@ class LogJSONFormatter(logging.Formatter):
 
     default_msec_format = "%s.%03d"
 
-    def json_format(self, record: logging.LogRecord, asctime: str, msg: str) -> str:
+    def json_format(
+        self,
+        record: logging.LogRecord,
+        asctime: str,
+        msg: str | dict[str, Any],
+        exception_msg: str | None = None,
+    ) -> str:
         """Return a JSON string from arguments.
 
         Args:
@@ -284,6 +290,7 @@ class LogJSONFormatter(logging.Formatter):
                 attributes will be extracted.
             asctime: RFC 3339 formatted time string.
             msg: The log message.
+            exception_msg (optional): Execution information, i.e. traceback.
 
         Returns:
             A JSON encoded string mapping record attributes to
@@ -291,6 +298,7 @@ class LogJSONFormatter(logging.Formatter):
 
             {
                 "asctime": "Formatted time when log originated",
+                "exec_info": "Execution information, i.e. traceback(optional)"
                 "filename": "Name of the file",
                 "full_file_path": "Full path to file(optional)",
                 "function_name": "Name of the function",
@@ -308,6 +316,7 @@ class LogJSONFormatter(logging.Formatter):
         return json.dumps(
             {
                 "asctime": asctime,
+                "exec_info": exception_msg,
                 "filename": record.filename,
                 "full_file_path": record.pathname,
                 "function_name": record.funcName,
@@ -339,6 +348,7 @@ class LogJSONFormatter(logging.Formatter):
 
             {
                 "asctime": "Formatted time when log originated",
+                "exec_info": "Execution information, i.e. traceback(optional)"
                 "filename": "Name of the file",
                 "full_file_path": "Full path to file(optional)",
                 "function_name": "Name of the function",
@@ -353,16 +363,21 @@ class LogJSONFormatter(logging.Formatter):
                 "thread_name": "Name of the thread(optional)"
             }
         """
-        exception_msg = ""
+        asctime = self.formatTime(record, self.datefmt)
+        msg = record.getMessage()
+
+        exception_msg: str | None = None
+
+        if msg[:6] == "JSON::":
+            msg = json.loads(msg[6:])
+
         if record.exc_info:
             exception_msg = repr(self.formatException(record.exc_info))
             exception_msg = exception_msg.replace("\n", " | ")
 
-        msg = record.getMessage()
-        asctime = self.formatTime(record, self.datefmt)
-        if exception_msg:
-            msg = msg + " | Execution Information: | " + exception_msg
-        return self.json_format(record=record, asctime=asctime, msg=msg)
+        return self.json_format(
+            record=record, asctime=asctime, msg=msg, exception_msg=exception_msg
+        )
 
 
 def create_handlers(
