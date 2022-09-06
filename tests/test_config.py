@@ -709,7 +709,7 @@ class CustomHandlerForTest(logging.Handler):
 class LogJSONFormatterResult(NamedTuple):
     """Represent result of using ``LogJSONFormatter``."""
 
-    log_dicts: list[dict[str, str]]
+    log_dicts: list[dict[str, Any]]
     err_set: list[str]
 
 
@@ -774,15 +774,88 @@ def call_LogJSONFormatter(log_strings: set[str]) -> LogJSONFormatterResult:
     return LogJSONFormatterResult(log_dicts=log_dicts, err_set=err_set)
 
 
+@pytest.fixture
+def call_StructuredLogFormatter(
+    structured_log_messages: list[dict[str, Any]]
+) -> LogJSONFormatterResult:
+    """Call `LogJSONFormatter.format` and return the result."""
+    emit_set: set[str] = set()
+    log_json_formatter = LogJSONFormatter()
+
+    custom_handler = CustomHandlerForTest(emit_set=emit_set)
+    custom_handler.setFormatter(log_json_formatter)
+
+    logger = logging.getLogger("test-logger")
+    logger.addHandler(custom_handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    count = 0
+
+    for log in structured_log_messages:
+        """
+        +-------+ +1 +--------+ +1 +--------+ +1 +--------+ +1 +---------+ +1 +---------+ +1+----------+
+        | count +--->+ count  +----> count  +--->+ count  +--->+ count   +--->+ count   +-->+ count    |
+        | = 0   |    | = 1    |    | = 2    |    | = 3    |    | = 4     |    | = 5     |   | = 6      |
+        +----+--+    +--------+    +--------+    +--------+    +---------+    +---------+   +-----+----+
+            ^                                                                                    |
+            |                                                                                    |
+            |                                      set count = 0                                 |
+            +------------------------------------------------------------------------------------+
+        Made with ``https://asciiflow.com/legacy/``.
+        """
+        struct_msg = StructuredMessage(
+            message=log["message"],
+            name=log["name"],
+            address=log["address"],
+            car=log["car"],
+            num=log["num"],
+            another_dict=log["another_dict"],
+        )
+        if count == 0:
+            logger.debug(struct_msg)
+        if count == 1:
+            logger.info(struct_msg)
+        if count == 2:
+            logger.warning(struct_msg)
+        if count == 3:
+            logger.error(struct_msg)
+        if count == 4:
+            logger.critical(struct_msg)
+        if count == 5:
+            try:
+                raise ValueError(struct_msg)
+            except ValueError:
+                logger.exception(struct_msg)
+        count = count + 1
+        if count == 6:
+            count = 0
+
+    log_dicts: list[dict[str, Any]] = list()
+    err_set: list[str] = list()
+
+    for lg in emit_set:
+        try:
+            log_dict = json.loads(lg)
+            log_dicts.append(log_dict)
+
+        except json.JSONDecodeError:
+            err_string = f"Didn't format them into json correctly: {log}"
+            err_set.append(err_string)
+    return LogJSONFormatterResult(log_dicts=log_dicts, err_set=err_set)
+
+
 class TestLogJSONFormatter:
     """Unit test for `LogJSONFormatter` class.
 
     GIVEN: `LogJSONFormatter` formats log records.
 
     WHEN: Log records are generated.
+        Structured log records are generated.
 
     THEN: `LogJSONFormatter` formats them correctly.
         The message is correctly stored in the JSON string.
+        Structured log records are correctly stored in the JSON string.
     """
 
     def test_log_format_is_json(
@@ -800,15 +873,29 @@ class TestLogJSONFormatter:
         messages: set[str] = set()
         for log_dict in call_LogJSONFormatter.log_dicts:
             try:
-                if " | Execution Information: | " in log_dict["message"]:
-                    idx = log_dict["message"].find(" | Execution Information: | ")
-                    msg = log_dict["message"][:idx]
-                    messages.add(msg)
-                else:
-                    messages.add(log_dict["message"])
+                messages.add(log_dict["message"])
             except KeyError:
                 messages.add("There is no key `message` in the log.")
         assert messages == log_strings, "Messages were not properly logged."
+
+    def test_structured_messages(
+        self,
+        call_StructuredLogFormatter: LogJSONFormatterResult,
+        structured_log_messages: list[dict[str, Any]],
+    ):
+        """THEN: Structured log records are correctly stored in the JSON string."""
+        messages: list[dict[str, Any]] = list()
+        for log_dict in call_StructuredLogFormatter.log_dicts:
+            try:
+                msg = log_dict["message"]
+                messages.append(msg)
+            except KeyError:
+                messages.append(
+                    {"no_message_found": "There is no key `message` in the log."}
+                )
+        sort_by_num = lambda log_item: log_item["num"]
+        messages.sort(key=sort_by_num)
+        assert messages == structured_log_messages, "Messages were not properly logged."
 
 
 @pytest.fixture
