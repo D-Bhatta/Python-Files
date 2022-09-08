@@ -38,7 +38,7 @@ name: Test Python code
 on: # yamllint disable-line rule:truthy rule:comments
   pull_request:
     branches:
-      - main
+      - none
 
 env:
   CI_TEST_ENV: "GitHub Actions"
