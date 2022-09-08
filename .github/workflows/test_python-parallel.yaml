@@ -1,15 +1,5 @@
 # Action for testing Python code on a matrix
 # yamllint disable rule:line-length
----
-name: Test Python code
-on: # yamllint disable-line rule:truthy rule:comments
-  pull_request:
-    branches:
-      - main
-
-env:
-  CI_TEST_ENV: "True"
-
 #                                           +---------------------+
 #                                           |                     |           +---------------+        +------+
 #                                      +--->+  CHECK FORMATTING   +---------->+ GEN MD REPORT +------->+ STOP |
@@ -43,6 +33,15 @@ env:
 # We start by creating a python cache that everyone can use, and then consuming it
 # within various jobs as they come up. The above ASCII diagram attempts to show how
 # the entire workflow works.
+---
+name: Test Python code
+on: # yamllint disable-line rule:truthy rule:comments
+  pull_request:
+    branches:
+      - main
+
+env:
+  CI_TEST_ENV: "GitHub Actions"
 
 jobs:
   create-cache:
@@ -72,7 +71,8 @@ jobs:
         env:
           cache-name: cache-python-env
         with:
-          path: .venv
+          path: |
+            .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Create python environment
         id: create-environment
@@ -125,7 +125,7 @@ jobs:
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python environment cache
+      - name: Python cache
         uses: actions/cache@v3
         id: venv-cache
         env:
@@ -179,7 +179,7 @@ jobs:
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python environment cache
+      - name: Python cache
         uses: actions/cache@v3
         id: venv-cache
         env:
@@ -233,7 +233,7 @@ jobs:
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python environment cache
+      - name: Python cache
         uses: actions/cache@v3
         id: venv-cache
         env:
@@ -287,7 +287,7 @@ jobs:
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python environment cache
+      - name: Python cache
         uses: actions/cache@v3
         id: venv-cache
         env:
@@ -298,21 +298,21 @@ jobs:
       - name: Test with bandit
         id: test-bandit
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
           echo "start_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           bandit --ini .bandit;
           echo "stop_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with flake8
         id: test-flake8
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
           echo "start_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           flake8;
           echo "stop_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with pydocstyle
         id: test-pydocstyle
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
           echo "start_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pydocstyle;
           echo "stop_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV

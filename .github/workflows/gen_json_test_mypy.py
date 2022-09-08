@@ -15,6 +15,16 @@ metrics["id"] = "test-mypy"
 env_info = {}
 
 try:
+    env_info["CI"] = os.environ["CI"]
+except KeyError:
+    env_info["CI"] = "ERROR: CI env variable is missing"
+
+try:
+    env_info["CI_TEST_ENV"] = os.environ["CI_TEST_ENV"]
+except KeyError:
+    env_info["CI_TEST_ENV"] = "ERROR: CI_TEST_ENV env variable is missing"
+
+try:
     env_info["cache_hit"] = os.environ["cache_hit"]
     if env_info["cache_hit"] == "true":
         env_info["cache_hit"] = True
