@@ -137,10 +137,14 @@ jobs:
         with:
           path: .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
+      - name: Activate python environment
+        id: activate-env
+        run: |
+          source .venv/bin/activate;
       - name: Check code formatting with black
         id: check-formatting-run-black
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           black --check .
           echo "stop_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
