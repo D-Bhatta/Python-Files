@@ -1,0 +1,335 @@
+# Action for testing Python code on a matrix
+# yamllint disable rule:line-length
+#                                           +---------------------+
+#                                           |                     |           +---------------+        +------+
+#                                      +--->+  CHECK FORMATTING   +---------->+ GEN MD REPORT +------->+ STOP |
+#                                      |    |                     |           ++--+--+--+-----+        +------+
+#                                      |    +---------------------+            ^  ^  ^  ^
+#                                      |                                       |  |  |  |
+#                                      |                                       |  |  |  |
+#              +-------------+         |    +---------------------+            |  |  |  |
+# +-------+    |             |         |    |                     |            |  |  |  |
+# |       |    |   CREATE    |         +--->+  TEST WITH PYTEST   +------------+  |  |  |
+# | START +--->+   PYTHON    +---------+    |                     |               |  |  |
+# |       |    |   CACHE     |         |    +---------------------+               |  |  |
+# +-------+    |             |         |                                          |  |  |
+#              +-----+-------+         |                                          |  |  |
+#                    |                 |    +---------------------+               |  |  |
+#                    |                 |    |                     |               |  |  |
+#                    |                 +--->+  TEST WITH MYPY     +---------------+  |  |
+#                    |                 |    |                     |                  |  |
+#                    |                 |    +---------------------+                  |  |
+#                    |                 |                                             |  |
+#                    |                 |                                             |  |
+#                    |                 |    +---------------------+                  |  |
+#                    |                 |    |                     |                  |  |
+#                    |                 |    |  TEST WITH :        |                  |  |
+#                    |                 |    |      BANDIT         +------------------+  |
+#                    |                 +--->+      FLAKE8         |                     |
+#                    |                      |      PYDOCSTYLE     |                     |
+#                    |                      |                     |                     |
+#                    |                      +---------------------+                     |
+#                    +------------------------------------------------------------------+
+# We start by creating a python cache that everyone can use, and then consuming it
+# within various jobs as they come up. The above ASCII diagram attempts to show how
+# the entire workflow works.
+---
+name: Test Python code
+on: # yamllint disable-line rule:truthy rule:comments
+  pull_request:
+    branches:
+      - main
+
+env:
+  CI_TEST_ENV: "GitHub Actions"
+
+jobs:
+  create-cache:
+    name: Create python cache if not present
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9, 3.10.7]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: |
+            .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - name: Create python environment
+        id: create-environment
+        if: ${{ steps.venv-cache.outputs.cache-hit == false }}
+        run: |
+          echo "start_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          python -m venv .venv;
+          source .venv/bin/activate;
+          python -m pip install --upgrade pip;
+          python -m pip install --upgrade wheel;
+          python -m pip install -r requirements.txt;
+          python -m pip install -r requirements-dev.txt;
+          echo "stop_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Create python cache if not present" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_create_cache.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  check-formatting:
+    name: Check code formatting with black
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.10.7]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    needs: [create-cache]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
+      - name: Check code formatting with black
+        id: check-formatting-run-black
+        run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
+          echo "start_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          black --check .
+          echo "stop_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Check code formatting with black" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_check_formatting.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  test-pytest:
+    name: Test with pytest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9, 3.10.7]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    needs: [create-cache]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - name: Test with pytest
+        id: test-pytest
+        run: |
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
+          echo "start_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          pytest;
+          echo "stop_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_test_pytest.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  test-mypy:
+    name: Test with mypy
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9, 3.10.7]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    needs: [create-cache]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - name: Test with mypy
+        id: test-mypy
+        run: |
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+          echo "start_mypy=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          mypy;
+          echo "stop_mypy=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_test_mypy.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  test-code-quality:
+    name: Test with bandit, flake8, pydocstyle
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9, 3.10.7]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    needs: [create-cache]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set environment variables for cache
+        id: set-env-var-cache
+        run: |
+          echo "python-version=$(python --version)" >> $GITHUB_ENV
+          echo "week-number=$(date "+%V")" >> $GITHUB_ENV
+      - name: Python cache
+        uses: actions/cache@v3
+        id: venv-cache
+        env:
+          cache-name: cache-python-env
+        with:
+          path: .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - name: Test with bandit
+        id: test-bandit
+        run: |
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+          echo "start_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          bandit --ini .bandit;
+          echo "stop_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Test with flake8
+        id: test-flake8
+        run: |
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+          echo "start_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          flake8;
+          echo "stop_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Test with pydocstyle
+        id: test-pydocstyle
+        run: |
+          source .venv/bin/activate; # Activate python virtual environment: this doesn't persist between steps
+          echo "start_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+          pydocstyle;
+          echo "stop_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
+      - name: Output env info
+        id: check-formatting-save-env-info
+        run: |
+          source .venv/bin/activate;
+          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "python_ver=$(python --version)"  >> $GITHUB_ENV
+          echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
+          echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: Generate markdown report
+        id: gen-md-report
+        run: |
+          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/gen_json_test_code_quality.py >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
