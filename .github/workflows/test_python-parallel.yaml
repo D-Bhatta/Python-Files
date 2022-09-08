@@ -121,7 +121,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set environment variables for cache
@@ -133,7 +133,7 @@ jobs:
         uses: actions/cache@v3
         id: venv-cache
         env:
-          cache-name: cache-python-env-formatting
+          cache-name: cache-python-env
         with:
           path: .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
@@ -179,7 +179,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set environment variables for cache
@@ -237,7 +237,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set environment variables for cache
@@ -295,7 +295,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set environment variables for cache
