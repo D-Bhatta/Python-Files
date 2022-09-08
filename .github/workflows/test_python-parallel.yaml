@@ -214,6 +214,11 @@ jobs:
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: debug file system
+        id: debug-file-system
+        run: |
+          ls
+          ls tests/
       - name: Generate markdown report
         id: gen-md-report
         run: |
@@ -272,6 +277,10 @@ jobs:
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
+      - name: debug file system
+        id: debug-file-system
+        run: |
+          ls
       - name: Generate markdown report
         id: gen-md-report
         run: |
