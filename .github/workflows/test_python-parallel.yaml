@@ -9,6 +9,8 @@ on: # yamllint disable-line rule:truthy rule:comments
 
 env:
   CI_TEST_ENV: "True"
+  _os: "[ubuntu-latest]"
+  _python-version: "[3.9, 3.10.7]"
 
 #                                           +---------------------+
 #                                           |                     |           +---------------+        +------+
@@ -50,8 +52,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, 3.10.7]
-        os: [ubuntu-latest]
+        python-version: ${{ env._python-version }}
+        os: ${{ env._os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 2
     steps:
