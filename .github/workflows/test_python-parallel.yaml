@@ -217,8 +217,7 @@ jobs:
       - name: debug file system
         id: debug-file-system
         run: |
-          ls
-          ls tests/
+          ls .pytest_cache
       - name: Generate markdown report
         id: gen-md-report
         run: |
@@ -280,7 +279,7 @@ jobs:
       - name: debug file system
         id: debug-file-system
         run: |
-          ls
+          ls .mypy_cache
       - name: Generate markdown report
         id: gen-md-report
         run: |
