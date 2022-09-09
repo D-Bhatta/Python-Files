@@ -3,9 +3,6 @@
 ---
 name: Test Python
 on: # yamllint disable-line rule:truthy rule:comments
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
