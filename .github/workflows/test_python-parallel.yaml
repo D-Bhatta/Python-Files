@@ -55,28 +55,30 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Checkout code
+        id: checkout-code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set environment variables for cache
-        id: set-env-var-cache
+      - name: Set environment variables for the job
+        id: set-env-var
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python cache
+      - name: Python environment cache
+        id: create-cache
         uses: actions/cache@v3
-        id: venv-cache
         env:
           cache-name: cache-python-env
         with:
           path: |
             .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
-      - name: Create python environment
+      - name: Create environment
         id: create-environment
-        if: ${{ steps.venv-cache.outputs.cache-hit == false }}
+        if: ${{ steps.create-cache.outputs.cache-hit == false }}
         run: |
           echo "start_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           python -m venv .venv;
@@ -87,10 +89,10 @@ jobs:
           python -m pip install -r requirements-dev.txt;
           echo "stop_create_venv=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
-        id: check-formatting-save-env-info
+        id: save-env-info
         run: |
           source .venv/bin/activate;
-          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "cache_hit=${{ steps.create-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
@@ -115,36 +117,39 @@ jobs:
     needs: [create-cache]
     steps:
       - name: Checkout code
+        id: checkout-code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set environment variables for cache
-        id: set-env-var-cache
+      - name: Set environment variables for the job
+        id: set-env-var
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python cache
+      - name: Python environment cache
+        id: get-cache
         uses: actions/cache@v3
-        id: venv-cache
         env:
           cache-name: cache-python-env
         with:
-          path: .venv
-          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}
+          path: |
+            .venv
+          key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Check code formatting with black
-        id: check-formatting-run-black
+        id: check-formatting
         run: |
           source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           black --check .
           echo "stop_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
-        id: check-formatting-save-env-info
+        id: save-env-info
         run: |
           source .venv/bin/activate;
-          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "cache_hit=${{ steps.create-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
@@ -169,19 +174,21 @@ jobs:
     needs: [create-cache]
     steps:
       - name: Checkout code
+        id: checkout-code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set environment variables for cache
-        id: set-env-var-cache
+      - name: Set environment variables for the job
+        id: set-env-var
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
       - name: Python cache
+        id: get-cache
         uses: actions/cache@v3
-        id: venv-cache
         env:
           cache-name: cache-python-env
         with:
@@ -195,10 +202,10 @@ jobs:
           pytest;
           echo "stop_pytest=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
-        id: check-formatting-save-env-info
+        id: save-env-info
         run: |
           source .venv/bin/activate;
-          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "cache_hit=${{ steps.create-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
@@ -223,19 +230,21 @@ jobs:
     needs: [create-cache]
     steps:
       - name: Checkout code
+        id: checkout-code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set environment variables for cache
-        id: set-env-var-cache
+      - name: Set environment variables for the job
+        id: set-env-var
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python cache
+      - name: Python environment cache
+        id: get-cache
         uses: actions/cache@v3
-        id: venv-cache
         env:
           cache-name: cache-python-env
         with:
@@ -249,10 +258,10 @@ jobs:
           mypy;
           echo "stop_mypy=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
-        id: check-formatting-save-env-info
+        id: save-env-info
         run: |
           source .venv/bin/activate;
-          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "cache_hit=${{ steps.create-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
@@ -277,19 +286,21 @@ jobs:
     needs: [create-cache]
     steps:
       - name: Checkout code
+        id: checkout-code
         uses: actions/checkout@v3
       - name: Setup Python version ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set environment variables for cache
-        id: set-env-var-cache
+      - name: Set environment variables for the job
+        id: set-env-var
         run: |
           echo "python-version=$(python --version)" >> $GITHUB_ENV
           echo "week-number=$(date "+%V")" >> $GITHUB_ENV
-      - name: Python cache
+      - name: Python environment cache
+        id: get-cache
         uses: actions/cache@v3
-        id: venv-cache
         env:
           cache-name: cache-python-env
         with:
@@ -317,10 +328,10 @@ jobs:
           pydocstyle;
           echo "stop_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Output env info
-        id: check-formatting-save-env-info
+        id: save-env-info
         run: |
           source .venv/bin/activate;
-          echo "cache_hit=${{ steps.venv-cache.outputs.cache-hit }}" >> $GITHUB_ENV
+          echo "cache_hit=${{ steps.create-cache.outputs.cache-hit }}" >> $GITHUB_ENV
           echo "python_ver=$(python --version)"  >> $GITHUB_ENV
           echo "pip_ver=$(pip --version)"  >> $GITHUB_ENV
           echo "pip_freeze=$(pip freeze | tr "\n" ";")"  >> $GITHUB_ENV
