@@ -212,7 +212,7 @@ jobs:
       - name: Generate markdown report
         id: gen-md-report
         run: |
-          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "# Test with pytest" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           python .github/workflows/gen_json_test_pytest.py >> $GITHUB_STEP_SUMMARY
@@ -268,7 +268,7 @@ jobs:
       - name: Generate markdown report
         id: gen-md-report
         run: |
-          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "# Test with mypy" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           python .github/workflows/gen_json_test_mypy.py >> $GITHUB_STEP_SUMMARY
@@ -338,7 +338,7 @@ jobs:
       - name: Generate markdown report
         id: gen-md-report
         run: |
-          echo "# Test with pytest, mypy, bandit, flake8, and pydocstyle" >> $GITHUB_STEP_SUMMARY
+          echo "# Test with bandit, flake8, pydocstyle" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           python .github/workflows/gen_json_test_code_quality.py >> $GITHUB_STEP_SUMMARY
