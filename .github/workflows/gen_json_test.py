@@ -9,7 +9,14 @@ import os
 
 metrics = {}
 
-metrics["name"] = "Test with pytest, mypy, bandit, flake8, and pydocstyle"
+metrics[
+    "name"
+] = "Create python environment cache and test with black, pytest, mypy, bandit, flake8, and pydocstyle"
+
+try:
+    metrics["job-id"] = os.environ["GITHUB_JOB"]
+except KeyError:
+    metrics["job-id"] = "ERROR: GITHUB_JOB env variable is missing"
 
 env_info = {}
 
@@ -54,6 +61,20 @@ try:
     env_info["pip_freeze"] = os.environ["pip_freeze"]
 except KeyError:
     env_info["pip_freeze"] = None
+
+run_black = {}
+
+try:
+    run_black["start_black"] = os.environ["start_black"]
+except KeyError:
+    run_black["start_black"] = None
+
+try:
+    run_black["stop_black"] = os.environ["stop_black"]
+except KeyError:
+    run_black["stop_black"] = None
+
+metrics["black"] = run_black
 
 test_pytest = {}
 
