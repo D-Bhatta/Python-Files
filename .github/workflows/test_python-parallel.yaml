@@ -192,7 +192,8 @@ jobs:
         env:
           cache-name: cache-python-env
         with:
-          path: .venv
+          path: |
+            .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Test with pytest
         id: test-pytest
@@ -248,7 +249,8 @@ jobs:
         env:
           cache-name: cache-python-env
         with:
-          path: .venv
+          path: |
+            .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Test with mypy
         id: test-mypy
@@ -304,7 +306,8 @@ jobs:
         env:
           cache-name: cache-python-env
         with:
-          path: .venv
+          path: |
+            .venv
           key: ${{ env.cache-name }}-${{ env.week-number }}-${{ runner.os }}-${{ env.python-version }}-${{ hashFiles('requirements*.txt') }}
       - name: Test with bandit
         id: test-bandit
