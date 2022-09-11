@@ -10,7 +10,11 @@ import os
 metrics = {}
 
 metrics["name"] = "Test with pytest"
-metrics["id"] = "test-pytest"
+
+try:
+    metrics["job-id"] = os.environ["GITHUB_JOB"]
+except KeyError:
+    metrics["job-id"] = "ERROR: GITHUB_JOB env variable is missing"
 
 env_info = {}
 

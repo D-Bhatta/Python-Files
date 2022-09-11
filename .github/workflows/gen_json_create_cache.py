@@ -9,8 +9,12 @@ import os
 
 metrics = {}
 
-metrics["name"] = "Check code formatting with black"
-metrics["job-id"] = "create-cache"
+metrics["name"] = "Create python cache if not present"
+
+try:
+    metrics["job-id"] = os.environ["GITHUB_JOB"]
+except KeyError:
+    metrics["job-id"] = "ERROR: GITHUB_JOB env variable is missing"
 
 env_info = {}
 
