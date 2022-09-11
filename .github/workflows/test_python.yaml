@@ -1,5 +1,12 @@
-# Action for testing Python code using pytest on a matrix
+# Action for testing Python code on a matrix.
 # yamllint disable rule:line-length
+#              +----------------+     +-------------------+    +-------------------+     +--------------------+
+# +-------+    |                |     |                   |    |                   |     |                    |     +--------+
+# |       |    |                |     |    TEST WITH      |    |    TEST WITH      |     |       CHECK        |     |        |
+# | START +--->+  CREATE CACHE  +---->+      PYTEST       +--->+       MYPY        +---->+    CODE QUALITY    +---->+  STOP  |
+# |       |    |                |     |                   |    |                   |     |                    |     |        |
+# +-------+    |                |     |                   |    |                   |     |                    |     +--------+
+#              +----------------+     +-------------------+    +-------------------+     +--------------------+
 ---
 name: Test Python
 on: # yamllint disable-line rule:truthy rule:comments
@@ -55,7 +62,7 @@ jobs:
       - name: Check code formatting with black
         id: check-formatting-run-black
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           black --check .
           echo "stop_black=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
@@ -138,21 +145,21 @@ jobs:
       - name: Test with bandit
         id: test-bandit
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           bandit --ini .bandit;
           echo "stop_bandit=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with flake8
         id: test-flake8
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           flake8;
           echo "stop_flake8=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
       - name: Test with pydocstyle
         id: test-pydocstyle
         run: |
-          source .venv/bin/activate;
+          source .venv/bin/activate; # Activate python environment: this doesn't persist between steps
           echo "start_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
           pydocstyle;
           echo "stop_pydocstyle=$(TZ=UTC date --rfc-3339=ns)"  >> $GITHUB_ENV
