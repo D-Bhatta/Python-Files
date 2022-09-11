@@ -9,7 +9,7 @@ import os
 
 metrics = {}
 
-metrics["name"] = "Check code formatting with black"
+metrics["name"] = "Create python cache if not present"
 
 try:
     metrics["job-id"] = os.environ["GITHUB_JOB"]
