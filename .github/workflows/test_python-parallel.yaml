@@ -1,4 +1,4 @@
-# Action for testing Python code on a matrix
+# Action for testing Python code on a matrix.
 # yamllint disable rule:line-length
 #                                           +---------------------+
 #                                           |                     |           +---------------+        +------+
