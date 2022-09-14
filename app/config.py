@@ -55,7 +55,7 @@ class StructuredMessage:
         >>> from app.config import StructuredMessage
         >>> str(StructuredMessage(message="message one", name="computer", address="Gaia", phone=1234567890))
         'JSON::{"address":"Gaia","message":"message one","name":"computer","phone":1234567890}'
-    """
+    """  # noqa: B950
 
     def __init__(self, message: str, **kwargs) -> None:
         self.kwargs = kwargs
@@ -98,7 +98,7 @@ class LogJSONFormatter(logging.Formatter):
         >>> logger.debug("Hello")
         {"asctime":"2022-08-17 10:43:44.888","filename":"<stdin>","full_file_path":"<stdin>","function_name":"<module>","level":"DEBUG","line_number":1,"message":"Hello","module_name":"<stdin>","name":"logger-new","process_id":13904,"process_name":"MainProcess","thread_id":10664,"thread_name":"MainThread"}
         >>>
-    """
+    """  # noqa: B950
 
     default_msec_format = "%s.%03d"
 
