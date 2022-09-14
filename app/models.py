@@ -35,6 +35,6 @@ class HttpUrl(BaseModel):
         pydantic.error_wrappers.ValidationError: 1 validation error for HttpUrl
         url
         invalid or missing URL scheme (type=value_error.url.scheme)
-    """
+    """  # noqa: B950
 
     url: AnyHttpUrl

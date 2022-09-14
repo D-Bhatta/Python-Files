@@ -80,7 +80,7 @@ def log():
         ... )
         >>> response.text
         Received JSON Data as POST
-    """
+    """  # noqa: B950
     if request.method == "GET":
         return "logger", 200
     if request.method == "POST":
@@ -133,7 +133,7 @@ def log_namespace(namespace: str = None):
         ... )
         >>> response.text
         Received JSON Data as POST
-    """
+    """  # noqa: B950
     if request.method == "GET":
         log_tag_msg = f"Logger at {namespace}"
         return log_tag_msg, 200
@@ -167,7 +167,7 @@ def get_log_data(namespace: str):
         ... )
         >>> dict(response.json())
         {"time": "2022-06-06 09:39:40,626", "log_level": "CRITICAL", "line": "39", "name": "__main__", "processID": "3856", "message": "This is critical"}
-    """
+    """  # noqa: B950
     try:
         json_log_data = json.dumps({namespace: REQUEST_DATA[namespace]})
     except KeyError:

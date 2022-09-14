@@ -80,7 +80,7 @@ class ResponseError(Exception):
         Traceback (most recent call last):
           File "<stdin>", line 5, in <module>
         app.config.ResponseError: There is an error in the content type header. Should be a form of text.
-    """
+    """  # noqa: B950
 
     def __init__(
         self,
@@ -235,20 +235,20 @@ async def async_transmit_log(
             status_code=e.status,
             headers=e.headers,
             request_info=e.request_info,
-        )
-    except ClientConnectionError:
+        ) from e
+    except ClientConnectionError as e:
         raise TransmissionError(
             types=(
                 ErrorType.Connection,
                 ErrorType.System,
             ),
             message="There was an error during connection to the log server.",
-        )
-    except ClientOSError:
+        ) from e
+    except ClientOSError as e:
         raise TransmissionError(
             types=(ErrorType.System,),
             message="There was a low level error during transmission of the log.",
-        )
+        ) from e
 
     return response_text, response_status_code
 
@@ -321,7 +321,7 @@ async def transmission_loop(
         LogTransmissionStatus.Success
 
         >>>
-    """
+    """  # noqa: B950
     tasks: set[asyncio.Task] = set()
 
     headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -468,7 +468,7 @@ def transmission_cleanup(
         >>> asyncio.run(cleanup_tasks())
         [<LogTransmissionStatus.CleanupSuccessful: 'The transmission task has been cleaned up successfully.'>, <LogTransmissionStatus.CleanupSuccessful: 'The transmission task has been cleaned up successfully.'>, <LogTransmissionStatus.CleanupSuccessful: 'The transmission task has
         been cleaned up successfully.'>]
-    """
+    """  # noqa: B950
     tasks.discard(task)
 
     return LogTransmissionStatus.CleanupSuccessful
@@ -601,13 +601,13 @@ def resolve_transmission(
         task_completed0
         task_completed1
         task_completed2
-    """
+    """  # noqa: B950
     if result_queue is None:
         cleanup_result = transmission_cleanup(tasks=tasks, task=task)
         if cleanup_result == LogTransmissionStatus.CleanupSuccessful:
             return LogTransmissionStatus.TransmissionResolved
 
-    saving_result = save_transmission_result(result_queue=result_queue, task=task)  # type: ignore[arg-type]  # Ignore incompatible type Optional[deque[Any]]
+    saving_result = save_transmission_result(result_queue=result_queue, task=task)  # type: ignore[arg-type]  # Ignore incompatible type Optional[deque[Any]] # noqa: B950
     cleanup_result = transmission_cleanup(tasks=tasks, task=task)
 
     if (
